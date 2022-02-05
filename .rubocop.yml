@@ -1,0 +1,21 @@
+require:
+  - "standard"
+  - "rubocop-rspec"
+
+inherit_gem:
+  standard: "config/base.yml"
+
+AllCops:
+  TargetRubyVersion: 3.1
+  # New cops introduced inbetween rubocop major versions are pending by default.
+  # This option enables them. More info:
+  # https://docs.rubocop.org/rubocop/versioning.html#pending-cops
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/*"
+    - "tmp/**/*"
+
+# Lines that are too long are less legible and harder to follow.
+Layout/LineLength:
+  Max: 80

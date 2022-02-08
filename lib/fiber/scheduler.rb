@@ -103,7 +103,9 @@ class Fiber
 
       # This operation is protected by the GVL:
       @selector.push(fiber)
-      @thread.raise(Errno::EINTR)
+      if Thread.current != @thread
+        @thread.raise(Errno::EINTR)
+      end
     end
 
     # @asynchronous May be non-blocking..
@@ -135,7 +137,13 @@ class Fiber
         end
       end
 
-      events = @selector.io_wait(fiber, io, events)
+      events =
+        begin
+          @blocked += 1
+          @selector.io_wait(fiber, io, events)
+        ensure
+          @blocked -= 1
+        end
 
       return events
     rescue TimeoutError

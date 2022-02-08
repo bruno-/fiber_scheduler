@@ -1,43 +1,34 @@
 require "fiber/scheduler"
 
-RSpec.describe "#close" do
-  context "without #run" do
+RSpec.describe "#block #unblock" do
+  context "Thread::Queue" do
+    let(:item) { "item" }
+
     it "" do
       order = []
+      queue = Thread::Queue.new
+      popped_item = nil
 
       Thread.new do
-        Fiber.set_scheduler(Fiber::Scheduler.new)
+        Fiber::Scheduler.call do
+          Fiber.schedule do
+            order << 1
+            popped_item = queue.pop
+            order << 5
+          end
 
-        Fiber.schedule do
-          order << 1
-        end
-      end.join
-
-      expect(order).to contain_exactly(1)
-    end
-  end
-
-  context "with #run" do
-    it "" do
-      order = []
-
-      Thread.new do
-        Fiber.set_scheduler(Fiber::Scheduler.new)
-
-        Fiber.schedule do
-          order << 1
-        end
-
-        Fiber.scheduler.run
-
-        Fiber.schedule do
           order << 2
+
+          Fiber.schedule do
+            order << 3
+            queue.push(item)
+            order << 4
+          end
         end
       end.join
 
-      expect(order).to contain_exactly(1, 2)
+      expect(popped_item).to eq item
+      expect(order).to eq (1..5).to_a
     end
   end
-
-  # TODO: should closing a scheduler also set Fiber.scheduler to nil?
 end

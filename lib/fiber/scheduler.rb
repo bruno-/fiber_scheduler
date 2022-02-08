@@ -75,7 +75,7 @@ class Fiber
     # Invoked when a fiber tries to perform a blocking operation which cannot continue. A corresponding call {unblock} must be performed to allow this fiber to continue.
     # @asynchronous May only be called on same thread as fiber scheduler.
     def block(blocker, timeout)
-      $stderr.puts "block(#{blocker}, #{Fiber.current}, #{timeout})"
+      # $stderr.puts "block(#{blocker}, #{Fiber.current}, #{timeout})\n"
       fiber = Fiber.current
 
       if timeout
@@ -108,7 +108,7 @@ class Fiber
 
     # @asynchronous May be non-blocking..
     def kernel_sleep(duration = nil)
-      puts "#kernel_sleep #{Fiber.current.inspect}"
+      # puts "#kernel_sleep #{Fiber.current.inspect}\n"
       if duration
         self.block(nil, duration)
       else
@@ -126,7 +126,7 @@ class Fiber
 
     # @asynchronous May be non-blocking..
     def io_wait(io, events, timeout = nil)
-      puts "!!in io_wait\n"
+      # puts "!!in io_wait\n"
       fiber = Fiber.current
 
       if timeout
@@ -145,10 +145,10 @@ class Fiber
     end
 
     def io_read(io, buffer, length)
-      puts "!!in io_read\n"
+      # puts "!!in io_read\n"
       @blocked += 1
       result = @selector.io_read(Fiber.current, io, buffer, length)
-      puts "!!in after io_read, result: #{result.inspect}\n"
+      # puts "!!in after io_read, result: #{result.inspect}\n"
       result
     ensure
       @blocked -= 1
@@ -167,10 +167,10 @@ class Fiber
     # @returns [Process::Status] A process status instance.
     # @asynchronous May be non-blocking..
     def process_wait(pid, flags)
-      puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} in #process wait\n"
+      # puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} in #process wait\n"
       @blocked += 1
       pid = @selector.process_wait(Fiber.current, pid, flags)
-      puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} after #process wait, pid #{pid}\n"
+      # puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} after #process wait, pid #{pid}\n"
       return pid
     ensure
       @blocked -= 1
@@ -187,9 +187,11 @@ class Fiber
         end
       end
 
-      yield timer
+      @blocked += 1
+      yield timeout
     ensure
       timer.cancel if timer
+      @blocked -= 1
     end
 
     # Run one iteration of the event loop.
@@ -200,7 +202,7 @@ class Fiber
 
       # If we are finished, we stop the task tree and exit:
       if self.finished?
-        puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} finished, blocked is #{@blocked}"
+        # puts "#{Process.clock_gettime(Process::CLOCK_MONOTONIC)} finished, blocked is #{@blocked}"
         return false
       end
 
@@ -219,9 +221,9 @@ class Fiber
 
       begin
         Thread.handle_interrupt(Errno::EINTR => :on_blocking) do
-          puts "running @selector.select(#{interval.inspect})"
+          # puts "running @selector.select(#{interval.inspect})"
           @selector.select(interval)
-          puts "after @selector.select(#{interval.inspect})"
+          # puts "after @selector.select(#{interval.inspect})"
         end
       rescue Errno::EINTR
         # Ignore.
@@ -252,7 +254,7 @@ class Fiber
     # and this method will return.
     def fiber(&block)
       fiber = Fiber.new(blocking: false, &block)
-      puts "Creating fiber #{fiber.inspect}"
+      # puts "Creating fiber #{fiber.inspect}"
       @count += 1
       fiber.tap(&:transfer)
     ensure

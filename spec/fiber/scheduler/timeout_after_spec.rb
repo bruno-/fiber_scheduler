@@ -7,7 +7,6 @@ RSpec.describe "#timeout_after" do
       Thread.new do
         start_time = nil
         order = []
-        error = nil
 
         Fiber::Scheduler.call do
           start_time = Time.now
@@ -18,17 +17,18 @@ RSpec.describe "#timeout_after" do
                 order << 2
                 sleep 1
               end
-            rescue => e
+            rescue Timeout::Error
               order << 4
-              error = e
             end
           end
           order << 3
         end
 
         duration = Time.now - start_time
+        p order
+        p duration
         expect(duration).to be >= 0.001
-        expect(duration).to be < 0.002
+        expect(duration).to be < 0.01
         expect(order).to eq [1, 2, 3, 4]
       end.join
     end

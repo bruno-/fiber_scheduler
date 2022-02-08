@@ -20,7 +20,8 @@ RSpec.describe "#process_wait" do
           end
         end
 
-        expect(Time.now - start_time).to be_within(0.01).of(0.1)
+        expect(Time.now - start_time).to be >= 0.1
+        expect(Time.now - start_time).to be < 0.15
         expect(runs).to eq 2
       end.join
     end

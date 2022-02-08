@@ -26,16 +26,13 @@ RSpec.describe "#io_wait" do
             # THIS fiber behaves synchronous!
             output.write(message)
             output.close
-            order << 5
+            order << 4
           end
-          # We never get there. Ensure the loop fiber ends.
-          order << 4
+          order << 5
         end
         order << 7
 
-        p order
-        p input_read
-        # expect(order).to eq (1..7).to_a
+        expect(order).to eq (1..7).to_a
         expect(input_read).to eq message
       end.join
     end

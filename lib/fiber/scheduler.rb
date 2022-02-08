@@ -7,25 +7,23 @@ class Fiber
     TimeoutError = Class.new(RuntimeError)
 
     def self.call(&block)
-      fiber = Fiber.new(blocking: true, &block)
-      scheduler = new(fiber)
+      scheduler = new
       Fiber.set_scheduler(scheduler)
-      fiber.transfer
+      block.call
 
       scheduler.run
     ensure
       Fiber.set_scheduler(nil)
     end
 
-    def initialize(fiber = nil)
+    def initialize
       @timers = Timers::Group.new
 
-      loop = fiber || Fiber.current
-      @selector = IO::Event::Selector.new(loop)
+      @selector = IO::Event::Selector.new(Fiber.current)
       @thread = Thread.current
 
       @blocked = 0
-      @count = 1
+      @count = 0
     end
 
     def finished?

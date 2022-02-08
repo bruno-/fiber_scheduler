@@ -1,3 +1,5 @@
+require "io/event" # early require so rspec doesn't display warnings
+
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
     # will be the default in rspec 4

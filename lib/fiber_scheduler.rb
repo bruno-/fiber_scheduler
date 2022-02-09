@@ -35,18 +35,6 @@ class FiberScheduler
     @selector = nil
   end
 
-  def closed?
-    @selector.nil?
-  end
-
-  def transfer
-    @selector.transfer
-  end
-
-  def yield
-    @selector.yield
-  end
-
   def push(fiber)
     @selector.push(fiber)
   end
@@ -88,7 +76,7 @@ class FiberScheduler
     if duration
       self.block(nil, duration)
     else
-      self.transfer
+      @selector.transfer
     end
   end
 

@@ -1,4 +1,4 @@
-require "io/event" # early require so rspec doesn't display warnings
+require_relative "../lib/fiber_scheduler"
 
 Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
 

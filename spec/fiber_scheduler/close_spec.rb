@@ -1,5 +1,3 @@
-require "fiber/scheduler"
-
 RSpec.shared_examples FiberSchedulerSpec::Close do
   include_context FiberSchedulerSpec::Context
 
@@ -84,7 +82,7 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
   end
 end
 
-RSpec.describe Fiber::Scheduler do
+RSpec.describe FiberScheduler do
   describe "#close" do
     include_examples FiberSchedulerSpec::Close
   end

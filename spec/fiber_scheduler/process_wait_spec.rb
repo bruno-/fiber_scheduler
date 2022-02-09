@@ -1,5 +1,3 @@
-require "fiber/scheduler"
-
 RSpec.shared_examples FiberSchedulerSpec::ProcessWait do
   include_context FiberSchedulerSpec::Context
 
@@ -57,7 +55,7 @@ RSpec.shared_examples FiberSchedulerSpec::ProcessWait do
   end
 end
 
-RSpec.describe Fiber::Scheduler do
+RSpec.describe FiberScheduler do
   describe "#process_wait" do
     context "with default setup" do
       include_examples FiberSchedulerSpec::ProcessWait

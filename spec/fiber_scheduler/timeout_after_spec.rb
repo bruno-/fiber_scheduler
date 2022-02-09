@@ -1,4 +1,3 @@
-require "fiber/scheduler"
 require "timeout"
 
 RSpec.shared_examples FiberSchedulerSpec::TimeoutAfter do
@@ -51,7 +50,7 @@ RSpec.shared_examples FiberSchedulerSpec::TimeoutAfter do
   end
 end
 
-RSpec.describe Fiber::Scheduler do
+RSpec.describe FiberScheduler do
   describe "#timeout_after" do
     context "with default setup" do
       include_examples FiberSchedulerSpec::TimeoutAfter

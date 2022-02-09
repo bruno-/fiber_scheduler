@@ -1,4 +1,3 @@
-require "fiber/scheduler"
 require "socket"
 
 RSpec.shared_examples FiberSchedulerSpec::SocketIO do
@@ -59,7 +58,7 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
   end
 end
 
-RSpec.describe Fiber::Scheduler do
+RSpec.describe FiberScheduler do
   describe "socket IO" do
     context "with default setup" do
       include_examples FiberSchedulerSpec::SocketIO

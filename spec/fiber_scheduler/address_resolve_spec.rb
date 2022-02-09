@@ -49,7 +49,7 @@ RSpec.describe FiberScheduler do
     context "with #call setup" do
       let(:setup) do
         -> do
-          described_class.schedule do
+          FiberScheduler do
             operations.call
           end
         end

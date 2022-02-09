@@ -2,18 +2,20 @@ require "io/event"
 require "timers"
 require "resolv"
 
-class FiberScheduler
-  TimeoutError = Class.new(RuntimeError)
-
-  def self.schedule(&block)
-    scheduler = new
+module Kernel
+  def FiberScheduler
+    scheduler = ::FiberScheduler.new
     Fiber.set_scheduler(scheduler)
-    block.call
+    yield
 
     scheduler.run
   ensure
     Fiber.set_scheduler(nil)
   end
+end
+
+class FiberScheduler
+  TimeoutError = Class.new(RuntimeError)
 
   def initialize
     @timers = Timers::Group.new

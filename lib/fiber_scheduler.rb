@@ -35,18 +35,6 @@ class FiberScheduler
     @selector = nil
   end
 
-  def push(fiber)
-    @selector.push(fiber)
-  end
-
-  def resume(fiber, *arguments)
-    if Fiber.scheduler
-      @selector.resume(fiber, *arguments)
-    else
-      @selector.push(fiber)
-    end
-  end
-
   def block(blocker, timeout)
     fiber = Fiber.current
 

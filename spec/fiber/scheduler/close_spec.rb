@@ -6,7 +6,13 @@ RSpec.describe "#close" do
       order = []
 
       Thread.new do
-        Fiber.set_scheduler(Fiber::Scheduler.new)
+        scheduler = Fiber::Scheduler.new
+
+        expect(scheduler)
+          .to receive(:close).once
+          .and_call_original
+
+        Fiber.set_scheduler(scheduler)
 
         Fiber.schedule do
           order << 1
@@ -22,7 +28,13 @@ RSpec.describe "#close" do
       order = []
 
       Thread.new do
-        Fiber.set_scheduler(Fiber::Scheduler.new)
+        scheduler = Fiber::Scheduler.new
+
+        expect(scheduler)
+          .to receive(:close).once
+          .and_call_original
+
+        Fiber.set_scheduler(scheduler)
 
         Fiber.schedule do
           order << 1

@@ -9,6 +9,13 @@ RSpec.describe "#block #unblock" do
       queue = Thread::Queue.new
       popped_item = nil
 
+      expect_any_instance_of(Fiber::Scheduler)
+        .to receive(:block).once
+        .and_call_original
+      expect_any_instance_of(Fiber::Scheduler)
+        .to receive(:unblock).once
+        .and_call_original
+
       Thread.new do
         Fiber::Scheduler.call do
           Fiber.schedule do

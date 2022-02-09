@@ -7,6 +7,10 @@ RSpec.describe "#process_wait" do
         runs = 0
         start_time = nil
 
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:process_wait).exactly(2).times
+          .and_call_original
+
         Fiber::Scheduler.call do
           start_time = Time.now
           Fiber.schedule do

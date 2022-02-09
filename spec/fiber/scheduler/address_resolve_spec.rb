@@ -6,6 +6,9 @@ RSpec.describe "#address_resolve" do
     it "" do
       Thread.new do
         order = []
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:address_resolve).exactly(2).times
+          .and_call_original
 
         Fiber::Scheduler.call do
           Fiber.schedule do

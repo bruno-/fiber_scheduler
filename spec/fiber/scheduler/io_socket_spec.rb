@@ -1,7 +1,7 @@
 require "fiber/scheduler"
 require "socket"
 
-RSpec.describe "#io_wait" do
+RSpec.describe "#io_read #io_write" do
   context "UNIXSocket.pair" do
     let(:message) { "fiber scheduler" }
 
@@ -10,6 +10,13 @@ RSpec.describe "#io_wait" do
         order = []
         input, output = UNIXSocket.pair
         input_read = nil
+
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:io_read).once
+          .and_call_original
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:io_write).once
+          .and_call_original
 
         Fiber::Scheduler.call do
           Fiber.schedule do

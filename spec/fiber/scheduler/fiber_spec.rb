@@ -4,6 +4,10 @@ RSpec.describe "#fiber" do
   context "Fiber.schedule" do
     it "" do
       Thread.new do
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:fiber).once
+          .and_call_original
+
         Fiber::Scheduler.call do
           expect {
             fiber = Fiber.schedule {}

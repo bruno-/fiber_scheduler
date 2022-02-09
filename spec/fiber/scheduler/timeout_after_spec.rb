@@ -8,6 +8,10 @@ RSpec.describe "#timeout_after" do
         start_time = nil
         order = []
 
+        expect_any_instance_of(Fiber::Scheduler)
+          .to receive(:timeout_after)
+          .and_call_original
+
         Fiber::Scheduler.call do
           start_time = Time.now
           Fiber.schedule do
@@ -25,11 +29,9 @@ RSpec.describe "#timeout_after" do
         end
 
         duration = Time.now - start_time
-        p order
-        p duration
         expect(duration).to be >= 0.001
         expect(duration).to be < 0.01
-        expect(order).to eq [1, 2, 3, 4]
+        expect(order).to eq (1..4).to_a
       end.join
     end
   end

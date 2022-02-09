@@ -19,6 +19,9 @@ module FiberSchedulerSpec
 
   module TimeoutAfter
   end
+
+  module IOWait
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do

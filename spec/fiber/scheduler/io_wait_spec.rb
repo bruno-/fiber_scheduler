@@ -1,69 +1,99 @@
 require "fiber/scheduler"
 
-RSpec.describe "#io_wait" do
+RSpec.shared_examples FiberSchedulerSpec::IOWait do
+  include_context FiberSchedulerSpec::Context
+
   context "UNIXSocket#wait_readable" do
     context "without a timeout" do
-      it "" do
-        Thread.new do
-          order = []
-          input, output = UNIXSocket.pair
-
-          expect_any_instance_of(Fiber::Scheduler)
-            .to receive(:io_wait).once
-            .and_call_original
-
-          Fiber::Scheduler.schedule do
-            Fiber.schedule do
-              order << 1
-              input.wait_readable
-              input.close
-              order << 6
-            end
-
-            order << 2
-
-            Fiber.schedule do
-              order << 3
-              output.write(".")
-              output.close
-              order << 4
-            end
-            order << 5
+      let(:order) { [] }
+      let(:pair) { UNIXSocket.pair }
+      let(:input) { pair.first }
+      let(:output) { pair.last }
+      let(:behavior) do
+        -> do
+          Fiber.schedule do
+            order << 1
+            input.wait_readable
+            input.close
+            order << 6
           end
-          order << 7
 
-          expect(order).to eq (1..7).to_a
-        end.join
+          order << 2
+
+          Fiber.schedule do
+            order << 3
+            output.write(".")
+            output.close
+            order << 4
+          end
+          order << 5
+        end
+      end
+
+      it "behaves async" do
+        setup.call
+
+        expect(order).to eq (1..6).to_a
+      end
+
+      it "calls #io_wait" do
+        expect_any_instance_of(scheduler_class)
+          .to receive(:io_wait).once
+          .and_call_original
+
+        setup.call
       end
     end
 
     context "with a timeout" do
-      it "" do
-        Thread.new do
-          order = []
-          input, output = UNIXSocket.pair
-
-          expect_any_instance_of(Fiber::Scheduler)
-            .to receive(:io_wait).once
-            .and_call_original
-
-          Fiber::Scheduler.schedule do
-            Fiber.schedule do
-              order << 1
-              input.wait_readable(0.001)
-              order << 3
-            end
-
-            order << 2
+      let(:order) { [] }
+      let(:pair) { UNIXSocket.pair }
+      let(:input) { pair.first }
+      let(:output) { pair.last }
+      let(:behavior) do
+        -> do
+          Fiber.schedule do
+            order << 1
+            input.wait_readable(0.001)
+            order << 3
           end
-
-          order << 4
-          input.close
-          output.close
-
-          expect(order).to eq (1..4).to_a
-        end.join
+          order << 2
+        end
       end
+
+      it "behaves async" do
+        setup.call
+
+        expect(order).to eq (1..3).to_a
+      end
+
+      it "calls #io_wait" do
+        expect_any_instance_of(scheduler_class)
+          .to receive(:io_wait).once
+          .and_call_original
+
+        setup.call
+      end
+    end
+  end
+end
+
+RSpec.describe Fiber::Scheduler do
+  describe "#io_wait" do
+    context "with default setup" do
+      include_examples FiberSchedulerSpec::IOWait
+    end
+
+    context "with block setup" do
+      let(:setup) do
+        -> do
+          described_class.schedule do
+            behavior.call
+          end
+        end
+      end
+
+      include_examples FiberSchedulerSpec::IOWait
     end
   end
 end

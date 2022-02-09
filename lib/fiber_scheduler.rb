@@ -26,7 +26,7 @@ class FiberScheduler
   end
 
   def close
-    self.run
+    run
 
     raise("Closing scheduler with blocked operations!") if @blocked > 0
 
@@ -36,9 +36,8 @@ class FiberScheduler
   end
 
   def block(blocker, timeout)
-    fiber = Fiber.current
-
     if timeout
+      fiber = Fiber.current
       timer = @timers.after(timeout) do
         if fiber.alive?
           fiber.transfer(false)
@@ -62,7 +61,7 @@ class FiberScheduler
 
   def kernel_sleep(duration = nil)
     if duration
-      self.block(nil, duration)
+      block(nil, duration)
     else
       @selector.transfer
     end
@@ -70,14 +69,13 @@ class FiberScheduler
 
   def address_resolve(hostname)
     @blocked += 1
-    ::Resolv.getaddresses(hostname)
+    Resolv.getaddresses(hostname)
   ensure
     @blocked -= 1
   end
 
   def io_wait(io, events, timeout = nil)
     fiber = Fiber.current
-
     if timeout
       timer = @timers.after(timeout) do
         fiber.raise(TimeoutError)
@@ -119,7 +117,6 @@ class FiberScheduler
 
   def timeout_after(timeout, exception = TimeoutError, message = "execution expired", &block)
     fiber = Fiber.current
-
     timer = @timers.after(timeout) do
       if fiber.alive?
         fiber.raise(exception, message)
@@ -161,9 +158,9 @@ class FiberScheduler
   end
 
   def run
-    raise(RuntimeError, 'Reactor has been closed') if @selector.nil?
+    raise(RuntimeError, "Reactor has been closed") if @selector.nil?
 
-    while self.run_once
+    while run_once
     end
   end
 

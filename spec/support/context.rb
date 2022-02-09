@@ -51,9 +51,10 @@ RSpec.shared_context FiberSchedulerSpec::Context do
   end
 
   around do |example|
-    Thread.new do
+    result = Thread.new do
       example.run
-    end.join
-    # TODO: add a timeout to #join
+    end.join(1)
+
+    expect(result).to be_a Thread # failure means spec timed out
   end
 end

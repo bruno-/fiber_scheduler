@@ -50,7 +50,7 @@ RSpec.shared_examples FiberSchedulerSpec::ProcessWait do
       times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       expect(duration).to be >= interval
-      expect(duration).to be < (interval * 1.2)
+      expect(duration).to be < (interval * 1.5)
     end
   end
 end

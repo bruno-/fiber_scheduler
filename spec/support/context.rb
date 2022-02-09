@@ -13,6 +13,12 @@ module FiberSchedulerSpec
 
   module Fiber
   end
+
+  module SocketIO
+  end
+
+  module TimeoutAfter
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do

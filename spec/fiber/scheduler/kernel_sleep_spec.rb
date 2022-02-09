@@ -1,65 +1,75 @@
 require "fiber/scheduler"
 
-RSpec.describe "#kernel_sleep" do
-  it "" do
-    expect(Fiber::Scheduler.new).to respond_to :run
-    expect(Fiber::Scheduler).to respond_to :schedule
-  end
+RSpec.shared_examples FiberSchedulerSpec::KernelSleep do
+  include_context FiberSchedulerSpec::Context
 
-  it "" do
-    Thread.new do
-      runs = 0
-      start_time = Time.now
+  context "Kernel.sleep" do
+    let(:interval) { 0.1 }
+    let(:order) { [] }
+    let(:times) { [] }
+    let(:duration) { times[1] - times[0] }
+    let(:behavior) do
+      -> do
+        times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-      expect_any_instance_of(Fiber::Scheduler)
+        Fiber.schedule do
+          order << 1
+          sleep interval
+          order << 5
+        end
+
+        order << 2
+
+        Fiber.schedule do
+          order << 3
+          sleep interval
+          order << 6
+        end
+
+        order << 4
+      end
+    end
+
+    it "calls #kernel_sleep" do
+      expect_any_instance_of(scheduler_class)
         .to receive(:kernel_sleep).exactly(2).times
         .and_call_original
 
-      Fiber::Scheduler.schedule do
-        Fiber.schedule do
-          sleep 0.1
-          runs += 1
-        end
+      setup.call
+    end
 
-        Fiber.schedule do
-          sleep 0.1
-          runs += 1
-        end
-      end
+    it "behaves async" do
+      setup.call
 
-      duration = Time.now - start_time
-      expect(duration).to be >= 0.1
-      expect(duration).to be < 0.12
-      expect(runs).to eq 2
-    end.join
+      expect(order).to eq (1..6).to_a
+    end
+
+    it "runs operations in parallel" do
+      setup.call
+      times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      expect(duration).to be >= interval
+      expect(duration).to be < (interval * 1.2)
+    end
   end
+end
 
-  it "" do
-    Thread.new do
-      runs = 0
-      start_time = Time.now
-      scheduler = Fiber::Scheduler.new
-      Fiber.set_scheduler(scheduler)
+RSpec.describe Fiber::Scheduler do
+  describe "#io_wait" do
+    context "with default setup" do
+      include_examples FiberSchedulerSpec::KernelSleep
+    end
 
-      expect(scheduler)
-        .to receive(:kernel_sleep).exactly(2).times
-        .and_call_original
-
-      Fiber.schedule do
-        sleep 0.1
-        runs += 1
+    context "with block setup" do
+      let(:setup) do
+        -> do
+          described_class.schedule do
+            behavior.call
+          end
+        end
       end
 
-      Fiber.schedule do
-        sleep 0.1
-        runs += 1
-      end
-      scheduler.run
-
-      duration = Time.now - start_time
-      expect(duration).to be >= 0.1
-      expect(duration).to be < 0.12
-      expect(runs).to eq 2
-    end.join
+      include_examples FiberSchedulerSpec::KernelSleep
+    end
   end
 end

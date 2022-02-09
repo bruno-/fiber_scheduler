@@ -22,6 +22,9 @@ module FiberSchedulerSpec
 
   module IOWait
   end
+
+  module KernelSleep
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do

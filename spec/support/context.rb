@@ -7,6 +7,9 @@ module FiberSchedulerSpec
 
   module Context
   end
+
+  module Close
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do
@@ -17,6 +20,7 @@ RSpec.shared_context FiberSchedulerSpec::Context do
     subject(:scheduler) { scheduler_class.new }
   end
   unless method_defined?(:setup)
+    let(:default_setup) { true }
     let(:setup) do
       -> do
         Fiber.set_scheduler(scheduler)
@@ -32,5 +36,6 @@ RSpec.shared_context FiberSchedulerSpec::Context do
     Thread.new do
       example.run
     end.join
+    # TODO: add a timeout to #join
   end
 end

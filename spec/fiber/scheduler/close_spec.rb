@@ -1,55 +1,91 @@
 require "fiber/scheduler"
 
-RSpec.describe "#close" do
+RSpec.shared_examples FiberSchedulerSpec::Close do
+  include_context FiberSchedulerSpec::Context
+
+  # TODO: should closing a scheduler also set Fiber.scheduler to nil?
   context "without #run" do
-    it "" do
-      order = []
+    let(:order) { [] }
 
-      Thread.new do
-        scheduler = Fiber::Scheduler.new
-
-        expect(scheduler)
-          .to receive(:close).once
-          .and_call_original
-
-        Fiber.set_scheduler(scheduler)
-
-        Fiber.schedule do
-          order << 1
-        end
-      end.join
-
-      expect(order).to contain_exactly(1)
-    end
-  end
-
-  context "with #run" do
-    it "" do
-      order = []
-
-      Thread.new do
-        scheduler = Fiber::Scheduler.new
-
-        expect(scheduler)
-          .to receive(:close).once
-          .and_call_original
-
-        Fiber.set_scheduler(scheduler)
-
-        Fiber.schedule do
-          order << 1
-        end
-
-        Fiber.scheduler.run
-
+    let(:behavior) do
+      lambda do
         Fiber.schedule do
           order << 2
         end
-      end.join
+        order << 1
+      end
+    end
+
+    # NOTE: this example does not use 'setup', #run should not be invoked
+    if method_defined?(:default_setup)
+      # skipping if user overrode setup
+      it "calls #close" do
+        expect(scheduler)
+          .to receive(:close).once
+          .and_call_original
+
+        Thread.new do
+          Fiber.set_scheduler(scheduler)
+
+          behavior.call
+        end.join
+      end
+    end
+
+    it "behaves async" do
+      setup.call
 
       expect(order).to contain_exactly(1, 2)
     end
   end
 
-  # TODO: should closing a scheduler also set Fiber.scheduler to nil?
+  context "with #run" do
+    let(:order) { [] }
+
+    let(:behavior) do
+      lambda do
+        Fiber.schedule do
+          order << 2
+        end
+
+        order << 1
+        Fiber.scheduler.run
+        order << 3
+
+        Fiber.schedule do
+          order << 4
+        end
+
+        order << 5
+      end
+    end
+
+    # NOTE: this example does not use 'setup'
+    if method_defined?(:default_setup)
+      # skipping if user overrode setup
+      it "calls #close" do
+        expect(scheduler)
+          .to receive(:close).once
+          .and_call_original
+
+        Thread.new do
+          Fiber.set_scheduler(scheduler)
+          behavior.call
+          scheduler.run
+        end.join
+      end
+    end
+
+    it "behaves async" do
+      setup.call
+
+      expect(order).to contain_exactly(1, 2, 3, 4, 5)
+    end
+  end
+end
+
+RSpec.describe Fiber::Scheduler do
+  describe "#close" do
+    include_examples FiberSchedulerSpec::Close
+  end
 end

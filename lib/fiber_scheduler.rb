@@ -19,7 +19,6 @@ class FiberScheduler
 
   def initialize
     @timers = Timers::Group.new
-
     @selector = IO::Event::Selector.new(Fiber.current)
 
     @blocked = 0
@@ -33,7 +32,7 @@ class FiberScheduler
   def close
     self.run
 
-    Kernel.raise("Closing scheduler with blocked operations!") if @blocked > 0
+    raise("Closing scheduler with blocked operations!") if @blocked > 0
 
     # We depend on GVL for consistency:
     @selector&.close
@@ -54,10 +53,6 @@ class FiberScheduler
 
   def push(fiber)
     @selector.push(fiber)
-  end
-
-  def raise(*arguments)
-    @selector.raise(*arguments)
   end
 
   def resume(fiber, *arguments)
@@ -167,7 +162,7 @@ class FiberScheduler
   end
 
   def run_once(timeout = nil)
-    Kernel.raise("Running scheduler on non-blocking fiber!") unless Fiber.blocking?
+    raise("Running scheduler on non-blocking fiber!") unless Fiber.blocking?
 
     if self.finished?
       return false
@@ -194,7 +189,7 @@ class FiberScheduler
   end
 
   def run
-    Kernel.raise(RuntimeError, 'Reactor has been closed') if @selector.nil?
+    raise(RuntimeError, 'Reactor has been closed') if @selector.nil?
 
     while self.run_once
     end

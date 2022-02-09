@@ -4,11 +4,11 @@ require "resolv"
 
 module Kernel
   def FiberScheduler
-    scheduler = ::FiberScheduler.new
+    scheduler = FiberScheduler.new
     Fiber.set_scheduler(scheduler)
     yield
 
-    scheduler.run
+    scheduler.close
   ensure
     Fiber.set_scheduler(nil)
   end
@@ -21,12 +21,11 @@ class FiberScheduler
     @timers = Timers::Group.new
     @selector = IO::Event::Selector.new(Fiber.current)
 
-    @blocked = 0
     @count = 0
   end
 
   def run
-    while @blocked > 0
+    while @count > 0
       interval = @timers.wait_interval
 
       if interval && interval < 0
@@ -43,11 +42,9 @@ class FiberScheduler
   # Fiber::SchedulerInterface methods below
 
   def close
+    return unless @selector
+
     run
-
-    raise("Closing scheduler with blocked operations!") if @blocked > 0
-
-    # We depend on GVL for consistency:
     @selector&.close
     @selector = nil
   end
@@ -62,12 +59,7 @@ class FiberScheduler
       end
     end
 
-    begin
-      @blocked += 1
-      @selector.transfer
-    ensure
-      @blocked -= 1
-    end
+    @selector.transfer
   ensure
     timer&.cancel
   end
@@ -78,17 +70,14 @@ class FiberScheduler
 
   def kernel_sleep(duration = nil)
     if duration
-      block(nil, duration)
+      block(Fiber.current, duration)
     else
       @selector.transfer
     end
   end
 
   def address_resolve(hostname)
-    @blocked += 1
     Resolv.getaddresses(hostname)
-  ensure
-    @blocked -= 1
   end
 
   def io_wait(io, events, timeout = nil)
@@ -99,15 +88,7 @@ class FiberScheduler
       end
     end
 
-    events =
-      begin
-        @blocked += 1
-        @selector.io_wait(fiber, io, events)
-      ensure
-        @blocked -= 1
-      end
-
-    return events
+    @selector.io_wait(fiber, io, events)
   rescue TimeoutError
     return false
   ensure
@@ -115,10 +96,7 @@ class FiberScheduler
   end
 
   def io_read(io, buffer, length)
-    @blocked += 1
     @selector.io_read(Fiber.current, io, buffer, length)
-  ensure
-    @blocked -= 1
   end
 
   def io_write(io, buffer, length)
@@ -126,10 +104,7 @@ class FiberScheduler
   end
 
   def process_wait(pid, flags)
-    @blocked += 1
     @selector.process_wait(Fiber.current, pid, flags)
-  ensure
-    @blocked -= 1
   end
 
   def timeout_after(timeout, exception = TimeoutError, message = "execution expired", &block)
@@ -140,18 +115,19 @@ class FiberScheduler
       end
     end
 
-    @blocked += 1
     yield timeout
   ensure
     timer.cancel if timer
-    @blocked -= 1
   end
 
   def fiber(&block)
-    fiber = Fiber.new(blocking: false, &block)
-    @count += 1
+    fiber = Fiber.new(blocking: false) do
+      @count += 1
+      block.call
+    ensure
+      @count -= 1
+    end
+
     fiber.tap(&:transfer)
-  ensure
-    @count -= 1
   end
 end

@@ -25,10 +25,6 @@ class FiberScheduler
     @count = 0
   end
 
-  def finished?
-    @blocked.zero?
-  end
-
   def close
     self.run
 
@@ -164,7 +160,7 @@ class FiberScheduler
   def run_once(timeout = nil)
     raise("Running scheduler on non-blocking fiber!") unless Fiber.blocking?
 
-    if self.finished?
+    if @blocked.zero?
       return false
     end
 

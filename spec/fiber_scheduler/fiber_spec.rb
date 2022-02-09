@@ -26,11 +26,18 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
       # works.
       Fiber.current
 
-      expect {
-        setup.call
-      }.to change {
-        ObjectSpace.each_object(Fiber).count
-      }.by(1)
+      begin
+        # Prevent GC running inbetween two ObjectSpace calls.
+        GC.disable
+
+        expect {
+          setup.call
+        }.to change {
+          ObjectSpace.each_object(Fiber).count
+        }.by(1)
+      ensure
+        GC.enable
+      end
     end
 
     it "creates a non-blocking fiber" do

@@ -25,6 +25,9 @@ module FiberSchedulerSpec
 
   module KernelSleep
   end
+
+  module ProcessWait
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do

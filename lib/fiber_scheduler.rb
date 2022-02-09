@@ -25,6 +25,23 @@ class FiberScheduler
     @count = 0
   end
 
+  def run
+    while @blocked > 0
+      interval = @timers.wait_interval
+
+      if interval && interval < 0
+        # We have timers ready to fire, don't sleep in the selctor:
+        interval = 0
+      end
+
+      @selector.select(interval)
+
+      @timers.fire
+    end
+  end
+
+  # Fiber::SchedulerInterface methods below
+
   def close
     run
 
@@ -128,40 +145,6 @@ class FiberScheduler
   ensure
     timer.cancel if timer
     @blocked -= 1
-  end
-
-  def run_once(timeout = nil)
-    raise("Running scheduler on non-blocking fiber!") unless Fiber.blocking?
-
-    if @blocked.zero?
-      return false
-    end
-
-    interval = @timers.wait_interval
-
-    # If there is no interval to wait (thus no timers), and no tasks, we could be done:
-    if interval.nil?
-      # Allow the user to specify a maximum interval if we would otherwise be sleeping indefinitely:
-      interval = timeout
-    elsif interval < 0
-      # We have timers ready to fire, don't sleep in the selctor:
-      interval = 0
-    elsif timeout and interval > timeout
-      interval = timeout
-    end
-
-    @selector.select(interval)
-
-    @timers.fire
-
-    return true
-  end
-
-  def run
-    raise(RuntimeError, "Reactor has been closed") if @selector.nil?
-
-    while run_once
-    end
   end
 
   def fiber(&block)

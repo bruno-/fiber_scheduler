@@ -17,7 +17,7 @@ RSpec.describe "#block #unblock" do
         .and_call_original
 
       Thread.new do
-        Fiber::Scheduler.call do
+        Fiber::Scheduler.schedule do
           Fiber.schedule do
             order << 1
             popped_item = queue.pop

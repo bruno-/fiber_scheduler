@@ -8,7 +8,7 @@ RSpec.describe "#fiber" do
           .to receive(:fiber).once
           .and_call_original
 
-        Fiber::Scheduler.call do
+        Fiber::Scheduler.schedule do
           expect {
             fiber = Fiber.schedule {}
             expect(fiber).not_to be_blocking

@@ -6,7 +6,7 @@ class Fiber
   class Scheduler
     TimeoutError = Class.new(RuntimeError)
 
-    def self.call(&block)
+    def self.schedule(&block)
       scheduler = new
       Fiber.set_scheduler(scheduler)
       block.call
@@ -99,7 +99,7 @@ class Fiber
 
     # @asynchronous May be called from any thread.
     def unblock(blocker, fiber)
-      # $stderr.puts "unblock(#{blocker}, #{fiber})"
+      # $stderr.puts "unblock(#{blocker}, #{fiber})\n"
 
       # This operation is protected by the GVL:
       @selector.push(fiber)
@@ -229,9 +229,9 @@ class Fiber
 
       begin
         Thread.handle_interrupt(Errno::EINTR => :on_blocking) do
-          # puts "running @selector.select(#{interval.inspect})"
+          # puts "running @selector.select(#{interval.inspect})\n"
           @selector.select(interval)
-          # puts "after @selector.select(#{interval.inspect})"
+          # puts "after @selector.select(#{interval.inspect})\n"
         end
       rescue Errno::EINTR
         # Ignore.

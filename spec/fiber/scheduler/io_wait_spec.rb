@@ -12,7 +12,7 @@ RSpec.describe "#io_wait" do
             .to receive(:io_wait).once
             .and_call_original
 
-          Fiber::Scheduler.call do
+          Fiber::Scheduler.schedule do
             Fiber.schedule do
               order << 1
               input.wait_readable
@@ -47,7 +47,7 @@ RSpec.describe "#io_wait" do
             .to receive(:io_wait).once
             .and_call_original
 
-          Fiber::Scheduler.call do
+          Fiber::Scheduler.schedule do
             Fiber.schedule do
               order << 1
               input.wait_readable(0.001)

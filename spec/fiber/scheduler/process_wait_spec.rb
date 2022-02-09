@@ -11,7 +11,7 @@ RSpec.describe "#process_wait" do
           .to receive(:process_wait).exactly(2).times
           .and_call_original
 
-        Fiber::Scheduler.call do
+        Fiber::Scheduler.schedule do
           start_time = Time.now
           Fiber.schedule do
             Process.wait(spawn("sleep 0.1"))

@@ -18,7 +18,7 @@ RSpec.describe "#io_read #io_write" do
           .to receive(:io_write).once
           .and_call_original
 
-        Fiber::Scheduler.call do
+        Fiber::Scheduler.schedule do
           Fiber.schedule do
             order << 1
             input_read = input.read(message.size)

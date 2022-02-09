@@ -12,7 +12,7 @@ RSpec.describe "#timeout_after" do
           .to receive(:timeout_after)
           .and_call_original
 
-        Fiber::Scheduler.call do
+        Fiber::Scheduler.schedule do
           start_time = Time.now
           Fiber.schedule do
             begin

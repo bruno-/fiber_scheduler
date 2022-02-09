@@ -3,7 +3,7 @@ require "fiber/scheduler"
 RSpec.describe "#kernel_sleep" do
   it "" do
     expect(Fiber::Scheduler.new).to respond_to :run
-    expect(Fiber::Scheduler).to respond_to :call
+    expect(Fiber::Scheduler).to respond_to :schedule
   end
 
   it "" do
@@ -15,7 +15,7 @@ RSpec.describe "#kernel_sleep" do
         .to receive(:kernel_sleep).exactly(2).times
         .and_call_original
 
-      Fiber::Scheduler.call do
+      Fiber::Scheduler.schedule do
         Fiber.schedule do
           sleep 0.1
           runs += 1

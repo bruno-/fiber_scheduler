@@ -2,12 +2,6 @@ require "fiber/scheduler"
 require "socket"
 
 RSpec.shared_examples FiberSchedulerSpec::AddressResolve do
-  around do |example|
-    Thread.new do
-      example.run
-    end.join
-  end
-
   include_context FiberSchedulerSpec::Context
 
   context "Addrinfo.getaddrinfo" do

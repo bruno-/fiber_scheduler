@@ -2,6 +2,9 @@ module FiberSchedulerSpec
   module AddressResolve
   end
 
+  module BlockUnblock
+  end
+
   module Context
   end
 end
@@ -23,5 +26,11 @@ RSpec.shared_context FiberSchedulerSpec::Context do
         scheduler.run
       end
     end
+  end
+
+  around do |example|
+    Thread.new do
+      example.run
+    end.join
   end
 end

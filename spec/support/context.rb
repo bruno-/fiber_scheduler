@@ -10,6 +10,9 @@ module FiberSchedulerSpec
 
   module Close
   end
+
+  module Fiber
+  end
 end
 
 RSpec.shared_context FiberSchedulerSpec::Context do

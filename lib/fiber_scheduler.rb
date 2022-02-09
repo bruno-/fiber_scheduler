@@ -21,7 +21,6 @@ class FiberScheduler
     @timers = Timers::Group.new
 
     @selector = IO::Event::Selector.new(Fiber.current)
-    @thread = Thread.current
 
     @blocked = 0
     @count = 0
@@ -92,9 +91,6 @@ class FiberScheduler
 
   def unblock(blocker, fiber)
     @selector.push(fiber)
-    if Thread.current != @thread
-      @thread.raise(Errno::EINTR)
-    end
   end
 
   def kernel_sleep(duration = nil)
@@ -190,13 +186,7 @@ class FiberScheduler
       interval = timeout
     end
 
-    begin
-      Thread.handle_interrupt(Errno::EINTR => :on_blocking) do
-        @selector.select(interval)
-      end
-    rescue Errno::EINTR
-      # Ignore.
-    end
+    @selector.select(interval)
 
     @timers.fire
 
@@ -206,12 +196,7 @@ class FiberScheduler
   def run
     Kernel.raise(RuntimeError, 'Reactor has been closed') if @selector.nil?
 
-    Thread.handle_interrupt(Errno::EINTR => :never, Interrupt => :never) do
-      while self.run_once
-        if Thread.pending_interrupt?
-          break
-        end
-      end
+    while self.run_once
     end
   end
 

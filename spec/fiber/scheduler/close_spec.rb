@@ -7,7 +7,7 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
   context "without #run" do
     let(:order) { [] }
 
-    let(:behavior) do
+    let(:operations) do
       lambda do
         Fiber.schedule do
           order << 2
@@ -27,7 +27,7 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
         Thread.new do
           Fiber.set_scheduler(scheduler)
 
-          behavior.call
+          operations.call
         end.join
       end
     end
@@ -42,7 +42,7 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
   context "with #run" do
     let(:order) { [] }
 
-    let(:behavior) do
+    let(:operations) do
       lambda do
         Fiber.schedule do
           order << 2
@@ -70,7 +70,7 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
 
         Thread.new do
           Fiber.set_scheduler(scheduler)
-          behavior.call
+          operations.call
           scheduler.run
         end.join
       end

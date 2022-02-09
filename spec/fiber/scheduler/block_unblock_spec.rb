@@ -9,10 +9,8 @@ RSpec.shared_examples FiberSchedulerSpec::BlockUnblock do
     let(:item) { "item" }
     let(:popped_items) { [] }
 
-    let(:behavior) do
+    let(:operations) do
       lambda do
-        popped_item = nil
-
         Fiber.schedule do
           order << 1
           popped_items << queue.pop
@@ -61,7 +59,7 @@ RSpec.describe Fiber::Scheduler do
       let(:setup) do
         -> do
           described_class.schedule do
-            behavior.call
+            operations.call
           end
         end
       end

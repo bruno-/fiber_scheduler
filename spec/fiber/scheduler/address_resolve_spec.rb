@@ -6,7 +6,7 @@ RSpec.shared_examples FiberSchedulerSpec::AddressResolve do
 
   context "Addrinfo.getaddrinfo" do
     let(:order) { [] }
-    let(:behavior) do
+    let(:operations) do
       lambda do
         Fiber.schedule do
           order << 1
@@ -51,7 +51,7 @@ RSpec.describe Fiber::Scheduler do
       let(:setup) do
         -> do
           described_class.schedule do
-            behavior.call
+            operations.call
           end
         end
       end

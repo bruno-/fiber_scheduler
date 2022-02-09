@@ -9,7 +9,7 @@ RSpec.shared_examples FiberSchedulerSpec::TimeoutAfter do
     let(:times) { [] }
     let(:timeout) { 0.001 }
     let(:duration) { times[1] - times[0] }
-    let(:behavior) do
+    let(:operations) do
       -> do
         times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
         Fiber.schedule do
@@ -61,7 +61,7 @@ RSpec.describe Fiber::Scheduler do
       let(:setup) do
         -> do
           described_class.schedule do
-            behavior.call
+            operations.call
           end
         end
       end

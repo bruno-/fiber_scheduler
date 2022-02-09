@@ -43,7 +43,7 @@ RSpec.shared_context FiberSchedulerSpec::Context do
       -> do
         Fiber.set_scheduler(scheduler)
 
-        behavior.call
+        operations.call
 
         scheduler.run
       end

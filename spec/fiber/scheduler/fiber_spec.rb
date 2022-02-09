@@ -7,7 +7,7 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
     let(:fibers) { [] }
     let(:fiber) { fibers.first }
 
-    let(:behavior) do
+    let(:operations) do
       -> do
         fibers << Fiber.schedule {}
       end
@@ -54,7 +54,7 @@ RSpec.describe Fiber::Scheduler do
       let(:setup) do
         -> do
           described_class.schedule do
-            behavior.call
+            operations.call
           end
         end
       end

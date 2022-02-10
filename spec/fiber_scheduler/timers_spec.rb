@@ -41,7 +41,7 @@ RSpec.describe FiberScheduler::Timers do
         sleep 0.11
         timers.call
 
-        expect(order).to eq -9.step(9, 2).to_a
+        expect(order).to eq (-9.step(9, 2)).to_a
       end
     end
   end

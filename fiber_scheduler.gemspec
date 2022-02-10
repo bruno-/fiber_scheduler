@@ -13,7 +13,6 @@ Gem::Specification.new do |gem|
   gem.license = "MIT"
 
   gem.add_dependency "io-event", "~> 1.0"
-  gem.add_dependency "timers", "~> 4.3"
 
   gem.add_development_dependency "rspec", "~> 3.11"
   gem.add_development_dependency "rubocop-rspec", "~> 2.8"

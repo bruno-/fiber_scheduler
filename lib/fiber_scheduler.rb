@@ -110,17 +110,17 @@ class FiberScheduler
     @selector.process_wait(Fiber.current, pid, flags)
   end
 
-  def timeout_after(timeout, exception = TimeoutError, message = "execution expired", &block)
+  def timeout_after(duration, exception = TimeoutError, message = "timeout")
     fiber = Fiber.current
-    timer = @timers.after(timeout) do
+    timer = @timers.after(duration) do
       if fiber.alive?
         fiber.raise(exception, message)
       end
     end
 
-    yield timeout
+    yield duration
   ensure
-    timer.cancel if timer
+    timer.cancel
   end
 
   def fiber(&block)

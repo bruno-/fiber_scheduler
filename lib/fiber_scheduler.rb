@@ -111,7 +111,7 @@ class FiberScheduler
 
   def timeout_after(duration, exception = TimeoutError, message = "timeout")
     fiber = Fiber.current
-    timer = @timers.after(duration) do
+    timer = @timers.add(duration) do
       if fiber.alive?
         fiber.raise(exception, message)
       end

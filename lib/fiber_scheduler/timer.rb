@@ -7,6 +7,8 @@ class FiberScheduler
     def initialize(duration, &block)
       @time = Process.clock_gettime(Process::CLOCK_MONOTONIC) + duration
       @block = block
+
+      @canceled = nil
     end
 
     def <=>(other)
@@ -21,6 +23,14 @@ class FiberScheduler
 
     def interval
       @time - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+
+    def cancel
+      @canceled = true
+    end
+
+    def canceled?
+      @canceled
     end
 
     def inspect

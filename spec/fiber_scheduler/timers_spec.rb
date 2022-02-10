@@ -26,5 +26,23 @@ RSpec.describe FiberScheduler::Timers do
         expect(order).to eq indices
       end
     end
+
+    context "when timers are canceled" do
+      let(:indices) { (-10..10).to_a }
+
+      before do
+        indices.each do |index|
+          timer = timers.add(index.fdiv(100)) { order << index }
+          timer.cancel if (index % 2).zero? # cancel even index timers
+        end
+      end
+
+      it "does not run canceled timers" do
+        sleep 0.11
+        timers.call
+
+        expect(order).to eq -9.step(9, 2).to_a
+      end
+    end
   end
 end

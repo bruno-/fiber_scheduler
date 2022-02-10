@@ -27,17 +27,17 @@ RSpec.describe FiberScheduler::Timers do
       end
     end
 
-    context "when timers are canceled" do
+    context "when timers are disabled" do
       let(:indices) { (-10..10).to_a }
 
       before do
         indices.each do |index|
           timer = timers.add(index.fdiv(100)) { order << index }
-          timer.cancel if (index % 2).zero? # cancel even index timers
+          timer.disable if (index % 2).zero? # disable even index timers
         end
       end
 
-      it "does not run canceled timers" do
+      it "does not run disabled timers" do
         sleep 0.11
         timers.call
 

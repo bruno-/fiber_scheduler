@@ -16,6 +16,7 @@ end
 
 class FiberScheduler
   TimeoutError = Class.new(RuntimeError)
+  IOWaitTimeout = Class.new(TimeoutError)
 
   def initialize
     @timers = Timers.new
@@ -56,15 +57,13 @@ class FiberScheduler
 
     fiber = Fiber.current
     timer = @timers.add(timeout) do
-      if fiber.alive?
-        fiber.transfer
-      end
+      fiber.transfer if fiber.alive?
     end
 
     begin
       @selector.transfer
     ensure
-      timer.cancel
+      timer.disable
     end
   end
 
@@ -73,11 +72,9 @@ class FiberScheduler
   end
 
   def kernel_sleep(duration = nil)
-    if duration
-      block(:sleep, duration)
-    else
-      @selector.transfer
-    end
+    return @selector.transfer unless duration
+
+    block(:sleep, duration)
   end
 
   def address_resolve(hostname)
@@ -86,17 +83,19 @@ class FiberScheduler
 
   def io_wait(io, events, timeout = nil)
     fiber = Fiber.current
-    if timeout
-      timer = @timers.add(timeout) do
-        fiber.raise(TimeoutError)
-      end
+    return @selector.io_wait(fiber, io, events) unless timeout
+
+    timer = @timers.add(timeout) do
+      fiber.raise(IOWaitTimeout) if fiber.alive?
     end
 
-    @selector.io_wait(fiber, io, events)
-  rescue TimeoutError
-    return false
-  ensure
-    timer&.cancel
+    begin
+      @selector.io_wait(fiber, io, events)
+    rescue IOWaitTimeout
+      false
+    ensure
+      timer.disable
+    end
   end
 
   def io_read(io, buffer, length)
@@ -114,12 +113,14 @@ class FiberScheduler
   def timeout_after(duration, exception = TimeoutError, message = "timeout")
     fiber = Fiber.current
     timer = @timers.add(duration) do
-      if fiber.alive?
-        fiber.raise(exception, message)
-      end
+      fiber.raise(exception, message) if fiber.alive?
     end
 
-    yield duration
+    begin
+      yield duration
+    ensure
+      timer.disable
+    end
   end
 
   def fiber(&block)

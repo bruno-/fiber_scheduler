@@ -12,7 +12,7 @@ class FiberScheduler
 
       while @timers.any? && @timers.first.time <= now
         timer = @timers.shift
-        unless timer.canceled?
+        unless timer.disabled?
           timer.call
         end
       end
@@ -53,8 +53,8 @@ class FiberScheduler
     end
 
     def interval
-      # Prune canceled timers
-      while @timers.first&.canceled?
+      # Prune disabled timers
+      while @timers.first&.disabled?
         @timers.shift
       end
 

@@ -52,18 +52,20 @@ class FiberScheduler
   end
 
   def block(blocker, timeout)
-    if timeout
-      fiber = Fiber.current
-      timer = @timers.add(timeout) do
-        if fiber.alive?
-          fiber.transfer(false)
-        end
+    return @selector.transfer unless timeout
+
+    fiber = Fiber.current
+    timer = @timers.add(timeout) do
+      if fiber.alive?
+        fiber.transfer
       end
     end
 
-    @selector.transfer
-  ensure
-    timer&.cancel
+    begin
+      @selector.transfer
+    ensure
+      timer.cancel
+    end
   end
 
   def unblock(blocker, fiber)
@@ -72,7 +74,7 @@ class FiberScheduler
 
   def kernel_sleep(duration = nil)
     if duration
-      block(Fiber.current, duration)
+      block(:sleep, duration)
     else
       @selector.transfer
     end

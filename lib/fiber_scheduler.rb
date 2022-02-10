@@ -1,6 +1,6 @@
 require "io/event"
-require "timers"
 require "resolv"
+require_relative "fiber_scheduler/timers"
 
 module Kernel
   def FiberScheduler
@@ -18,7 +18,7 @@ class FiberScheduler
   TimeoutError = Class.new(RuntimeError)
 
   def initialize
-    @timers = Timers::Group.new
+    @timers = Timers.new
     @selector = IO::Event::Selector.new(Fiber.current)
 
     @count = 0
@@ -26,7 +26,7 @@ class FiberScheduler
 
   def run
     while @count > 0
-      interval = @timers.wait_interval
+      interval = @timers.interval
 
       if interval && interval < 0
         # We have timers ready to fire, don't sleep in the selctor:
@@ -34,8 +34,7 @@ class FiberScheduler
       end
 
       @selector.select(interval)
-
-      @timers.fire
+      @timers.call
     end
   end
 
@@ -55,7 +54,7 @@ class FiberScheduler
   def block(blocker, timeout)
     if timeout
       fiber = Fiber.current
-      timer = @timers.after(timeout) do
+      timer = @timers.add(timeout) do
         if fiber.alive?
           fiber.transfer(false)
         end
@@ -86,7 +85,7 @@ class FiberScheduler
   def io_wait(io, events, timeout = nil)
     fiber = Fiber.current
     if timeout
-      timer = @timers.after(timeout) do
+      timer = @timers.add(timeout) do
         fiber.raise(TimeoutError)
       end
     end
@@ -119,8 +118,6 @@ class FiberScheduler
     end
 
     yield duration
-  ensure
-    timer.cancel
   end
 
   def fiber(&block)

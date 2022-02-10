@@ -23,12 +23,20 @@ class FiberScheduler
     @timers = Timers.new
 
     @count = 0
+    @nested = []
   end
 
   def run
     while @count > 0
-      @selector.select(@timers.interval)
-      @timers.call
+      if @nested.empty?
+        @selector.select(@timers.interval)
+        @timers.call
+      else
+        while @nested.any?
+          fiber = @nested.pop
+          fiber.transfer
+        end
+      end
     end
   end
 
@@ -117,6 +125,11 @@ class FiberScheduler
   end
 
   def fiber(&block)
+    unless Fiber.blocking?
+      # nested Fiber.schedule
+      @nested << Fiber.current
+    end
+
     fiber = Fiber.new(blocking: false) do
       @count += 1
       block.call

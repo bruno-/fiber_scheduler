@@ -44,9 +44,12 @@ class FiberScheduler
   def close
     return unless @selector
 
-    run
-    @selector&.close
-    @selector = nil
+    begin
+      run
+    ensure
+      @selector.close
+      @selector = nil
+    end
   end
 
   def block(blocker, timeout)

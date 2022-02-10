@@ -3,14 +3,21 @@ require "resolv"
 require_relative "fiber_scheduler/timers"
 
 module Kernel
-  def FiberScheduler
-    scheduler = FiberScheduler.new
-    Fiber.set_scheduler(scheduler)
-    yield
+  def FiberScheduler(&block)
+    if Fiber.scheduler.nil?
+      scheduler = FiberScheduler.new
+      Fiber.set_scheduler(scheduler)
 
-    scheduler.close
-  ensure
-    Fiber.set_scheduler(nil)
+      begin
+        yield
+        scheduler.close
+      ensure
+        Fiber.set_scheduler(nil)
+      end
+    else
+      # Fiber.scheduler already set, just schedule a task.
+      Fiber.schedule(&block)
+    end
   end
 end
 

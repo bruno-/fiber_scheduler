@@ -19,22 +19,15 @@ class FiberScheduler
   IOWaitTimeout = Class.new(TimeoutError)
 
   def initialize
-    @timers = Timers.new
     @selector = IO::Event::Selector.new(Fiber.current)
+    @timers = Timers.new
 
     @count = 0
   end
 
   def run
     while @count > 0
-      interval = @timers.interval
-
-      if interval && interval < 0
-        # We have timers ready to fire, don't sleep in the selctor:
-        interval = 0
-      end
-
-      @selector.select(interval)
+      @selector.select(@timers.interval)
       @timers.call
     end
   end

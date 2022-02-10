@@ -60,7 +60,9 @@ class FiberScheduler
 
       return if @timers.empty?
 
-      @timers.first.interval
+      interval = @timers.first.interval
+
+      interval >= 0 ? interval : 0
     end
 
     def inspect

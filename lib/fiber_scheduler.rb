@@ -63,11 +63,7 @@ class FiberScheduler
   def block(blocker, timeout)
     return @selector.transfer unless timeout
 
-    fiber = Fiber.current
-    trigger = @triggers.add(timeout) do
-      fiber.transfer if fiber.alive?
-    end
-
+    trigger = @triggers.transfer_in(timeout)
     begin
       @selector.transfer
     ensure
@@ -90,15 +86,12 @@ class FiberScheduler
   end
 
   def io_wait(io, events, timeout = nil)
-    fiber = Fiber.current
-    return @selector.io_wait(fiber, io, events) unless timeout
+    return @selector.io_wait(Fiber.current, io, events) unless timeout
 
-    trigger = @triggers.add(timeout) do
-      fiber.raise(IOWaitTimeout) if fiber.alive?
-    end
+    trigger = @triggers.raise_in(timeout, IOWaitTimeout)
 
     begin
-      @selector.io_wait(fiber, io, events)
+      @selector.io_wait(Fiber.current, io, events)
     rescue IOWaitTimeout
       false
     ensure
@@ -119,10 +112,7 @@ class FiberScheduler
   end
 
   def timeout_after(duration, exception = TimeoutError, message = "timeout")
-    fiber = Fiber.current
-    trigger = @triggers.add(duration) do
-      fiber.raise(exception, message) if fiber.alive?
-    end
+    trigger = @triggers.raise_in(duration, exception, message)
 
     begin
       yield duration

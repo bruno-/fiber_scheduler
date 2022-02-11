@@ -18,8 +18,35 @@ class FiberScheduler
       end
     end
 
-    def add(duration, &block)
-      trigger = Trigger.new(duration, &block)
+    def raise_in(duration, *args, **options)
+      call_in(duration, :raise, *args, **options)
+    end
+
+    def transfer_in(duration, *args, **options)
+      call_in(duration, :transfer, *args, **options)
+    end
+
+    def interval
+      # Prune disabled triggers
+      while @triggers.first&.disabled?
+        @triggers.shift
+      end
+
+      return if @triggers.empty?
+
+      interval = @triggers.first.interval
+
+      interval >= 0 ? interval : 0
+    end
+
+    def inspect
+      @triggers.inspect
+    end
+
+    private
+
+    def call_in(duration, action, *args, fiber: Fiber.current)
+      trigger = Trigger.new(duration, fiber, action, *args)
 
       if @triggers.empty?
         @triggers << trigger
@@ -50,23 +77,6 @@ class FiberScheduler
 
       @triggers.insert(index, trigger)
       trigger
-    end
-
-    def interval
-      # Prune disabled triggers
-      while @triggers.first&.disabled?
-        @triggers.shift
-      end
-
-      return if @triggers.empty?
-
-      interval = @triggers.first.interval
-
-      interval >= 0 ? interval : 0
-    end
-
-    def inspect
-      @triggers.inspect
     end
   end
 end

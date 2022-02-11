@@ -141,20 +141,20 @@ class FiberScheduler
     end
 
     def process_wait(fiber, pid, flags)
-      r, w = IO.pipe
+      reader, writer = IO.pipe
 
       thread = Thread.new do
         Process::Status.wait(pid, flags)
       ensure
-        w.close
+        writer.close
       end
 
-      io_wait(fiber, r, IO::READABLE)
+      io_wait(fiber, reader, IO::READABLE)
 
       thread.value
     ensure
-      r.close
-      w.close
+      reader.close
+      writer.close
       thread&.kill
     end
 
@@ -220,12 +220,12 @@ class FiberScheduler
 
     def initialize(selector)
       @selector = selector
-      @input, @output = IO.pipe
+      @reader, @writer = IO.pipe
 
       @fiber = Fiber.new do
         while true
-          if @selector.io_wait(@fiber, @input, IO::READABLE)
-            @input.read_nonblock(1)
+          if @selector.io_wait(@fiber, @reader, IO::READABLE)
+            @reader.read_nonblock(1)
           end
         end
       end
@@ -234,13 +234,13 @@ class FiberScheduler
     end
 
     def signal
-      @output.write(MESSAGE)
-      @output.flush
+      @writer.write(MESSAGE)
+      @writer.flush
     end
 
     def close
-      @input.close
-      @output.close
+      @reader.close
+      @writer.close
     end
   end
 end

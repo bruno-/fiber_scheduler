@@ -6,8 +6,8 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
   context "UNIXSocket.pair" do
     let(:order) { [] }
     let(:pair) { UNIXSocket.pair }
-    let(:input) { pair.first }
-    let(:output) { pair.last }
+    let(:reader) { pair.first }
+    let(:writer) { pair.last }
     let(:messages) { [] }
     let(:sent) { "ruby" }
     let(:received) { messages.first }
@@ -16,8 +16,8 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
       -> do
         Fiber.schedule do
           order << 1
-          messages << input.read(sent.size)
-          input.close
+          messages << reader.read(sent.size)
+          reader.close
           order << 6
         end
 
@@ -25,8 +25,8 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
 
         Fiber.schedule do
           order << 3
-          output.write(sent)
-          output.close
+          writer.write(sent)
+          writer.close
           order << 4
         end
         order << 5

@@ -5,14 +5,14 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
     context "without a timeout" do
       let(:order) { [] }
       let(:pair) { UNIXSocket.pair }
-      let(:input) { pair.first }
-      let(:output) { pair.last }
+      let(:reader) { pair.first }
+      let(:writer) { pair.last }
       let(:operations) do
         -> do
           Fiber.schedule do
             order << 1
-            input.wait_readable
-            input.close
+            reader.wait_readable
+            reader.close
             order << 6
           end
 
@@ -20,8 +20,8 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
 
           Fiber.schedule do
             order << 3
-            output.write(".")
-            output.close
+            writer.write(".")
+            writer.close
             order << 4
           end
           order << 5
@@ -46,13 +46,13 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
     context "with a timeout" do
       let(:order) { [] }
       let(:pair) { UNIXSocket.pair }
-      let(:input) { pair.first }
-      let(:output) { pair.last }
+      let(:reader) { pair.first }
+      let(:writer) { pair.last }
       let(:operations) do
         -> do
           Fiber.schedule do
             order << 1
-            input.wait_readable(0.001)
+            reader.wait_readable(0.001)
             order << 3
           end
           order << 2

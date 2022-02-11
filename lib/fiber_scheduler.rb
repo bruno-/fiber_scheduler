@@ -1,6 +1,6 @@
 require "io/event"
 require "resolv"
-require_relative "fiber_scheduler/timers"
+require_relative "fiber_scheduler/triggers"
 
 module Kernel
   def FiberScheduler(&block)
@@ -27,7 +27,7 @@ class FiberScheduler
 
   def initialize
     @selector = IO::Event::Selector.new(Fiber.current)
-    @timers = Timers.new
+    @triggers = Triggers.new
 
     @count = 0
     @nested = []
@@ -36,8 +36,8 @@ class FiberScheduler
   def run
     while @count > 0
       if @nested.empty?
-        @selector.select(@timers.interval)
-        @timers.call
+        @selector.select(@triggers.interval)
+        @triggers.call
       else
         while @nested.any?
           fiber = @nested.pop
@@ -64,14 +64,14 @@ class FiberScheduler
     return @selector.transfer unless timeout
 
     fiber = Fiber.current
-    timer = @timers.add(timeout) do
+    trigger = @triggers.add(timeout) do
       fiber.transfer if fiber.alive?
     end
 
     begin
       @selector.transfer
     ensure
-      timer.disable
+      trigger.disable
     end
   end
 
@@ -93,7 +93,7 @@ class FiberScheduler
     fiber = Fiber.current
     return @selector.io_wait(fiber, io, events) unless timeout
 
-    timer = @timers.add(timeout) do
+    trigger = @triggers.add(timeout) do
       fiber.raise(IOWaitTimeout) if fiber.alive?
     end
 
@@ -102,7 +102,7 @@ class FiberScheduler
     rescue IOWaitTimeout
       false
     ensure
-      timer.disable
+      trigger.disable
     end
   end
 
@@ -120,14 +120,14 @@ class FiberScheduler
 
   def timeout_after(duration, exception = TimeoutError, message = "timeout")
     fiber = Fiber.current
-    timer = @timers.add(duration) do
+    trigger = @triggers.add(duration) do
       fiber.raise(exception, message) if fiber.alive?
     end
 
     begin
       yield duration
     ensure
-      timer.disable
+      trigger.disable
     end
   end
 

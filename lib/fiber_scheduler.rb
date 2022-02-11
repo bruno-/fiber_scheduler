@@ -1,6 +1,6 @@
 require "io/event"
 require "resolv"
-require_relative "fiber_scheduler/triggers"
+require_relative "fiber_scheduler/timeouts"
 
 module Kernel
   def FiberScheduler(&block)
@@ -26,7 +26,7 @@ class FiberScheduler
 
   def initialize
     @selector = IO::Event::Selector.new(Fiber.current)
-    @triggers = Triggers.new
+    @timeouts = Timeouts.new
 
     @count = 0
     @nested = []
@@ -35,8 +35,8 @@ class FiberScheduler
   def run
     while @count > 0
       if @nested.empty?
-        @selector.select(@triggers.interval)
-        @triggers.call
+        @selector.select(@timeouts.interval)
+        @timeouts.call
       else
         while @nested.any?
           fiber = @nested.pop
@@ -59,14 +59,14 @@ class FiberScheduler
     end
   end
 
-  def block(blocker, timeout)
-    return @selector.transfer unless timeout
+  def block(blocker, duration)
+    return @selector.transfer unless duration
 
-    trigger = @triggers.transfer_in(timeout)
+    timeout = @timeouts.transfer_in(duration)
     begin
       @selector.transfer
     ensure
-      trigger.disable
+      timeout.disable
     end
   end
 
@@ -84,14 +84,14 @@ class FiberScheduler
     Resolv.getaddresses(hostname)
   end
 
-  def io_wait(io, events, timeout = nil)
-    return @selector.io_wait(Fiber.current, io, events) unless timeout
+  def io_wait(io, events, duration = nil)
+    return @selector.io_wait(Fiber.current, io, events) unless duration
 
-    trigger = @triggers.transfer_in(timeout)
+    timeout = @timeouts.transfer_in(duration)
     begin
       @selector.io_wait(Fiber.current, io, events)
     ensure
-      trigger.disable
+      timeout.disable
     end
   end
 
@@ -108,12 +108,11 @@ class FiberScheduler
   end
 
   def timeout_after(duration, exception = TimeoutError, message = "timeout")
-    trigger = @triggers.raise_in(duration, exception, message)
-
+    timeout = @timeouts.raise_in(duration, exception, message)
     begin
       yield duration
     ensure
-      trigger.disable
+      timeout.disable
     end
   end
 

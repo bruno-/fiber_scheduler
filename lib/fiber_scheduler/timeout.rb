@@ -1,5 +1,5 @@
 class FiberScheduler
-  class Trigger
+  class Timeout
     include Comparable
 
     attr_reader :time

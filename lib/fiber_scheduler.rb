@@ -23,7 +23,6 @@ end
 
 class FiberScheduler
   TimeoutError = Class.new(RuntimeError)
-  IOWaitTimeout = Class.new(TimeoutError)
 
   def initialize
     @selector = IO::Event::Selector.new(Fiber.current)
@@ -88,12 +87,9 @@ class FiberScheduler
   def io_wait(io, events, timeout = nil)
     return @selector.io_wait(Fiber.current, io, events) unless timeout
 
-    trigger = @triggers.raise_in(timeout, IOWaitTimeout)
-
+    trigger = @triggers.transfer_in(timeout)
     begin
       @selector.io_wait(Fiber.current, io, events)
-    rescue IOWaitTimeout
-      false
     ensure
       trigger.disable
     end

@@ -1,4 +1,6 @@
 class FiberScheduler
+  Error = Class.new(RuntimeError)
+
   class Timeout
     include Comparable
 

@@ -1,47 +1,56 @@
-RSpec.xdescribe FiberScheduler::Timeouts do
-  subject(:timeouts) { described_class.new }
-
+RSpec.describe FiberScheduler::Timeouts do
   describe "#call" do
+    include_context FiberSchedulerSpec::Context
     let(:order) { [] }
-
-    context "with empty timeouts" do
-      it "does nothing" do
-        expect(order).to be_empty
-      end
-    end
+    let(:scheduler_class) { FiberScheduler }
+    let(:indices) { (-10..10).to_a }
 
     context "with timeouts added randomly" do
-      let(:indices) { (-10..10).to_a }
-
-      before do
-        indices.shuffle.each do |index|
-          timeouts.add(index.fdiv(100)) { order << index }
+      let(:operations) do
+        -> do
+          indices.shuffle.each do |index|
+            Fiber.schedule do
+              Fiber.scheduler.timeout_after(index.fdiv(100)) do
+                # Sleep will timeout and add to 'order'
+                sleep
+              rescue FiberScheduler::Timeout::Error
+                order << index
+              end
+            end
+          end
         end
       end
 
       it "runs timeouts in order" do
+        setup.call
         sleep 0.11
-        timeouts.call
 
         expect(order).to eq indices
       end
     end
 
     context "when timeouts are disabled" do
-      let(:indices) { (-10..10).to_a }
-
-      before do
-        indices.each do |index|
-          timeout = timeouts.add(index.fdiv(100)) { order << index }
-          timeout.disable if (index % 2).zero? # disable even index timeouts
+      let(:operations) do
+        -> do
+          indices.each do |index|
+            Fiber.schedule do
+              Fiber.scheduler.timeout_after(index.fdiv(100)) do
+                # Even index timeouts will timeout and add to 'order'.
+                # Odd index timeouts are disabled and will not add to 'order'.
+                sleep if (index % 2).zero?
+              rescue FiberScheduler::Timeout::Error
+                order << index
+              end
+            end
+          end
         end
       end
 
       it "does not run disabled timeouts" do
+        setup.call
         sleep 0.11
-        timeouts.call
 
-        expect(order).to eq (-9.step(9, 2)).to_a
+        expect(order).to eq (-10.step(10, 2)).to_a
       end
     end
   end

@@ -2,6 +2,8 @@ require_relative "timeout"
 
 class FiberScheduler
   class Timeouts
+    attr_reader :timeouts
+
     def initialize
       # Array is sorted by Timeout#time
       @timeouts = []

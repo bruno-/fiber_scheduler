@@ -22,8 +22,6 @@ module Kernel
 end
 
 class FiberScheduler
-  Error = Class.new(RuntimeError)
-
   def initialize
     @selector = IO::Event::Selector.new(Fiber.current)
     @timeouts = Timeouts.new

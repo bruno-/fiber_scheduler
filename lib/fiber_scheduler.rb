@@ -31,11 +31,11 @@ class FiberScheduler
   def initialize
     @fiber = Fiber.current
     @selector =
-      # if defined?(IO::Event)
-      #   IO::Event::Selector.new(Fiber.current)
-      # else
+      if defined?(IO::Event)
+        IO::Event::Selector.new(Fiber.current)
+      else
         Selector.new(@fiber)
-      # end
+      end
     @timeouts = Timeouts.new
 
     @count = 0

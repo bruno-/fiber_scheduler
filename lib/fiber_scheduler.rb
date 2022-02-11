@@ -1,6 +1,12 @@
-require "io/event"
 require "resolv"
+require_relative "fiber_scheduler/selector"
 require_relative "fiber_scheduler/timeouts"
+
+begin
+  # Use io/event selector if available
+  require "io/event"
+rescue LoadError
+end
 
 module Kernel
   def FiberScheduler(&block)
@@ -23,7 +29,12 @@ end
 
 class FiberScheduler
   def initialize
-    @selector = IO::Event::Selector.new(Fiber.current)
+    @selector =
+      if defined?(IO::Event)
+        IO::Event::Selector.new(Fiber.current)
+      else
+        Selector.new(Fiber.current)
+      end
     @timeouts = Timeouts.new
 
     @count = 0

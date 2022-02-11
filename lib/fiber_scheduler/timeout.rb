@@ -2,6 +2,8 @@ class FiberScheduler
   class Timeout
     include Comparable
 
+    Error = Class.new(FiberScheduler::Error)
+
     attr_reader :time
 
     def initialize(duration, fiber, method, *args)

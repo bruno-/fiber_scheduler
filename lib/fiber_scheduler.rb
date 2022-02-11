@@ -22,7 +22,7 @@ module Kernel
 end
 
 class FiberScheduler
-  TimeoutError = Class.new(RuntimeError)
+  Error = Class.new(RuntimeError)
 
   def initialize
     @selector = IO::Event::Selector.new(Fiber.current)
@@ -101,7 +101,7 @@ class FiberScheduler
     @selector.process_wait(Fiber.current, pid, flags)
   end
 
-  def timeout_after(duration, exception = TimeoutError, message = "timeout", &block)
+  def timeout_after(duration, exception = Timeout::Error, message = "timeout", &block)
     @timeouts.timeout(duration, exception, message, &block)
   end
 

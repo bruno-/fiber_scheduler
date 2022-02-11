@@ -40,13 +40,13 @@ class FiberScheduler
       @fiber = fiber
 
       @waiting = Hash.new.compare_by_identity
-
       @ready = []
     end
 
     def close
       @fiber = nil
       @waiting = nil
+      @ready = nil
     end
 
     def transfer
@@ -156,14 +156,20 @@ class FiberScheduler
     end
 
     def select(duration = nil)
-      if pop_ready
+      if @ready.any?
         # If we have popped items from the ready list, they may influence the
         # duration calculation, so we don't delay the event loop:
         duration = 0
+
+        count = @ready.size
+        count.times do
+          fiber = @ready.shift
+          fiber.transfer if fiber.alive?
+        end
       end
 
-      readable = Array.new
-      writable = Array.new
+      readable = []
+      writable = []
 
       @waiting.each do |io, waiter|
         waiter.each do |fiber, events|
@@ -177,8 +183,8 @@ class FiberScheduler
         end
       end
 
-      duration = 0 unless @ready.empty?
-      readable, writable, _ = ::IO.select(readable, writable, nil, duration)
+      duration = 0 if @ready.any?
+      readable, writable, _ = IO.select(readable, writable, nil, duration)
 
       ready = Hash.new(0)
 
@@ -191,24 +197,11 @@ class FiberScheduler
       end
 
       ready.each do |io, events|
-        @waiting.delete(io).transfer(events)
+        waiter = @waiting.delete(io)
+        waiter.transfer(events)
       end
 
       ready.size
-    end
-
-    private
-
-    def pop_ready
-      return if @ready.empty?
-
-      count = @ready.size
-      count.times do
-        fiber = @ready.shift
-        fiber.transfer if fiber.alive?
-      end
-
-      true
     end
   end
 end

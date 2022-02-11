@@ -20,21 +20,16 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
     end
 
     it "creates a fiber" do
-      # If only main fiber exists `Fiber.current` creates another fiber:
-      # https://github.com/ruby/ruby/blob/67f4729ff0b0493ad82486b2f797a5c2b3ee20a6/cont.c#L2170-L2172
-      # We're pre-emptively doing that so that ObjectSpace assertion below
-      # works.
-      Fiber.current
-
       begin
         # Prevent GC running inbetween two ObjectSpace calls.
         GC.disable
 
-        expect {
-          setup.call
-        }.to change {
-          ObjectSpace.each_object(Fiber).count
-        }.by(1)
+        before = ObjectSpace.each_object(Fiber).count
+        setup.call
+        after = ObjectSpace.each_object(Fiber).count
+
+        # The after - before is > 1 with the built-in selector.
+        expect(after - before).to be >= 1
       ensure
         GC.enable
       end

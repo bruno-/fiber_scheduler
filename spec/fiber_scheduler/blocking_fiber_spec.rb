@@ -1,8 +1,8 @@
 RSpec.describe FiberScheduler do
-  describe "waiting fiber" do
+  describe "blocking fiber" do
     include_context FiberSchedulerSpec::Context
 
-    shared_examples :waiting_fiber_schedule do
+    shared_examples :blocking_fiber_schedule do
       let(:order) { [] }
 
       context "when scheduled in a top-level fiber" do
@@ -11,37 +11,29 @@ RSpec.describe FiberScheduler do
             Fiber.schedule do
               order << 1
               sleep 0.01
-              order << 4
+              order << 6
             end
 
             order << 2
 
-            Fiber.schedule(wait: true) do
+            Fiber.schedule(blocking: true) do
               order << 3
               sleep 0.01
-              order << 5
+              order << 4
             end
 
-            order << 6
-
-            Fiber.schedule do
-              order << 7
-              sleep 0.01
-              order << 9
-            end
-
-            order << 8
+            order << 5
           end
         end
 
-        it "stops the parent fiber until the child finishes" do
+        it "stops all other fibers" do
           setup.call
 
-          expect(order).to eq (1..9).to_a
+          expect(order).to eq (1..6).to_a
         end
       end
 
-      context "when scheduled in a nested non-waiting fiber" do
+      context "when scheduled in a nested fiber" do
         let(:operations) do
           -> do
             Fiber.schedule do
@@ -55,31 +47,23 @@ RSpec.describe FiberScheduler do
             Fiber.schedule do
               order << 3
 
-              Fiber.schedule(wait: true) do
+              Fiber.schedule(blocking: true) do
                 order << 4
                 sleep 0.01
-                order << 9
+                order << 5
               end
 
-              order << 10
-            end
-
-            order << 5
-
-            Fiber.schedule do
               order << 6
-              sleep 0.01
-              order << 11
             end
 
             order << 7
           end
         end
 
-        it "stops the parent fiber until the child finishes" do
+        it "stops all other fibers" do
           setup.call
 
-          expect(order).to eq (1..11).to_a
+          expect(order).to eq (1..8).to_a
         end
       end
 
@@ -89,7 +73,7 @@ RSpec.describe FiberScheduler do
             Fiber.schedule do
               order << 1
               sleep 0.01
-              order << 5
+              order << 8
             end
 
             order << 2
@@ -97,37 +81,29 @@ RSpec.describe FiberScheduler do
             Fiber.schedule(wait: true) do
               order << 3
 
-              Fiber.schedule(wait: true) do
+              Fiber.schedule(blocking: true) do
                 order << 4
                 sleep 0.01
-                order << 6
+                order << 5
               end
 
-              order << 7
+              order << 6
             end
 
-            order << 8
-
-            Fiber.schedule do
-              order << 9
-              sleep 0.01
-              order << 11
-            end
-
-            order << 10
+            order << 7
           end
         end
 
-        it "stops the parent fiber until the child finishes" do
+        it "stops all other fibers" do
           setup.call
 
-          expect(order).to eq (1..11).to_a
+          expect(order).to eq (1..8).to_a
         end
       end
     end
 
     context "with default setup" do
-      include_examples :waiting_fiber_schedule
+      include_examples :blocking_fiber_schedule
     end
 
     context "with block setup" do
@@ -139,7 +115,7 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      include_examples :waiting_fiber_schedule
+      include_examples :blocking_fiber_schedule
     end
   end
 end

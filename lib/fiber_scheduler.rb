@@ -121,7 +121,7 @@ class FiberScheduler
     current = Fiber.current
 
     if blocking
-      # All fibers wait on a blocking fiber, so 'wait' option is irrelevant.
+      # All fibers wait on a blocking fiber, so 'wait' option is ignored.
       Fiber.new(blocking: true, &block).tap(&:resume)
     elsif wait
       finished = false # prevents races

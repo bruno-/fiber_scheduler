@@ -75,7 +75,7 @@ class FiberScheduler
     def io_read(fiber, io, buffer, length)
       offset = 0
 
-      while true
+      loop do
         maximum_size = buffer.size - offset
 
         case result = blocking{io.read_nonblock(maximum_size, exception: false)}
@@ -103,13 +103,13 @@ class FiberScheduler
         end
       end
 
-      return offset
+      offset
     end
 
     def io_write(fiber, io, buffer, length)
       offset = 0
 
-      while true
+      loop do
         maximum_size = buffer.size - offset
 
         chunk = buffer.get_string(offset, maximum_size)
@@ -133,7 +133,7 @@ class FiberScheduler
         end
       end
 
-      return offset
+      offset
     end
 
     def process_wait(fiber, pid, flags)
@@ -147,7 +147,7 @@ class FiberScheduler
 
       self.io_wait(fiber, r, IO::READABLE)
 
-      return thread.value
+      thread.value
     ensure
       r.close
       w.close
@@ -156,7 +156,8 @@ class FiberScheduler
 
     def select(duration = nil)
       if pop_ready
-        # If we have popped items from the ready list, they may influence the duration calculation, so we don't delay the event loop:
+        # If we have popped items from the ready list, they may influence the
+        # duration calculation, so we don't delay the event loop:
         duration = 0
       end
 
@@ -194,22 +195,21 @@ class FiberScheduler
         @waiting.delete(io).transfer(events)
       end
 
-      return ready.size
+      ready.size
     end
 
     private
 
     def pop_ready
-      unless @ready.empty?
-        count = @ready.size
+      return if @ready.empty?
 
-        count.times do
-          fiber = @ready.pop
-          fiber.transfer if fiber.alive?
-        end
-
-        return true
+      count = @ready.size
+      count.times do
+        fiber = @ready.pop
+        fiber.transfer if fiber.alive?
       end
+
+      true
     end
 
     def blocking(&block)

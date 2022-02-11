@@ -42,12 +42,9 @@ class FiberScheduler
       @waiting = Hash.new.compare_by_identity
 
       @ready = []
-      @interrupt = Interrupt.new(self)
     end
 
     def close
-      @interrupt.close
-
       @fiber = nil
       @waiting = nil
     end
@@ -212,35 +209,6 @@ class FiberScheduler
       end
 
       true
-    end
-  end
-
-  class Interrupt
-    MESSAGE = ".".freeze
-
-    def initialize(selector)
-      @selector = selector
-      @reader, @writer = IO.pipe
-
-      @fiber = Fiber.new do
-        while true
-          if @selector.io_wait(@fiber, @reader, IO::READABLE)
-            @reader.read_nonblock(1)
-          end
-        end
-      end
-
-      @fiber.transfer
-    end
-
-    def signal
-      @writer.write(MESSAGE)
-      @writer.flush
-    end
-
-    def close
-      @reader.close
-      @writer.close
     end
   end
 end

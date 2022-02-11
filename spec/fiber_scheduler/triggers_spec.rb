@@ -1,4 +1,4 @@
-RSpec.describe FiberScheduler::Triggers do
+RSpec.xdescribe FiberScheduler::Triggers do
   subject(:triggers) { described_class.new }
 
   describe "#call" do

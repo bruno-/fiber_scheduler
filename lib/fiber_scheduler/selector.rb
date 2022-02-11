@@ -41,10 +41,8 @@ class FiberScheduler
 
       @waiting = Hash.new.compare_by_identity
 
-      @blocked = false
-
-      @ready = Queue.new
-      @interrupt = Interrupt.attach(self)
+      @ready = []
+      @interrupt = Interrupt.new(self)
     end
 
     def close
@@ -54,12 +52,10 @@ class FiberScheduler
       @waiting = nil
     end
 
-    # Transfer from the current fiber to the event loop.
     def transfer
       @fiber.transfer
     end
 
-    # Append the given fiber into the ready list.
     def push(fiber)
       @ready.push(fiber)
     end
@@ -67,7 +63,7 @@ class FiberScheduler
     def io_wait(fiber, io, events)
       waiter = @waiting[io] = Waiter.new(fiber, events, @waiting[io])
 
-      @loop.transfer
+      @fiber.transfer
     ensure
       waiter&.invalidate
     end
@@ -78,16 +74,20 @@ class FiberScheduler
       loop do
         maximum_size = buffer.size - offset
 
-        case result = blocking{io.read_nonblock(maximum_size, exception: false)}
+        result = Fiber.new(blocking: true) {
+          io.read_nonblock(maximum_size, exception: false)
+        }.resume
+
+        case result
         when :wait_readable
           if length > 0
-            self.io_wait(fiber, io, IO::READABLE)
+            io_wait(fiber, io, IO::READABLE)
           else
             return -EAGAIN
           end
         when :wait_writable
           if length > 0
-            self.io_wait(fiber, io, IO::WRITABLE)
+            io_wait(fiber, io, IO::WRITABLE)
           else
             return -EAGAIN
           end
@@ -113,16 +113,20 @@ class FiberScheduler
         maximum_size = buffer.size - offset
 
         chunk = buffer.get_string(offset, maximum_size)
-        case result = blocking{io.write_nonblock(chunk, exception: false)}
+        result = Fiber.new(blocking: true) {
+          io.write_nonblock(chunk, exception: false)
+        }.resume
+
+        case result
         when :wait_readable
           if length > 0
-            self.io_wait(fiber, io, IO::READABLE)
+            io_wait(fiber, io, IO::READABLE)
           else
             return -EAGAIN
           end
         when :wait_writable
           if length > 0
-            self.io_wait(fiber, io, IO::WRITABLE)
+            io_wait(fiber, io, IO::WRITABLE)
           else
             return -EAGAIN
           end
@@ -145,7 +149,7 @@ class FiberScheduler
         w.close
       end
 
-      self.io_wait(fiber, r, IO::READABLE)
+      io_wait(fiber, r, IO::READABLE)
 
       thread.value
     ensure
@@ -176,10 +180,8 @@ class FiberScheduler
         end
       end
 
-      @blocked = true
       duration = 0 unless @ready.empty?
       readable, writable, _ = ::IO.select(readable, writable, nil, duration)
-      @blocked = false
 
       ready = Hash.new(0)
 
@@ -205,26 +207,20 @@ class FiberScheduler
 
       count = @ready.size
       count.times do
-        fiber = @ready.pop
+        fiber = @ready.shift
         fiber.transfer if fiber.alive?
       end
 
       true
     end
-
-    def blocking(&block)
-      Fiber.new(blocking: true, &block).resume
-    end
   end
 
   class Interrupt
-    def self.attach(selector)
-      self.new(selector)
-    end
+    MESSAGE = ".".freeze
 
     def initialize(selector)
       @selector = selector
-      @input, @output = ::IO.pipe
+      @input, @output = IO.pipe
 
       @fiber = Fiber.new do
         while true
@@ -238,7 +234,7 @@ class FiberScheduler
     end
 
     def signal
-      @output.write(".")
+      @output.write(MESSAGE)
       @output.flush
     end
 

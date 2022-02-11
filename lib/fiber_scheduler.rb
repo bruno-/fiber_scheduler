@@ -29,6 +29,7 @@ end
 
 class FiberScheduler
   def initialize
+    @fiber = Fiber.current
     @selector =
       if defined?(IO::Event)
         IO::Event::Selector.new(Fiber.current)
@@ -114,13 +115,14 @@ class FiberScheduler
     @timeouts.timeout(duration, exception, message, &block)
   end
 
-  def fiber(&block)
-    unless Fiber.blocking?
+  def fiber(blocking: false, &block)
+    current = Fiber.current
+    if current != @fiber
       # nested Fiber.schedule
-      @nested << Fiber.current
+      @nested << current
     end
 
-    fiber = Fiber.new(blocking: false) do
+    fiber = Fiber.new(blocking: blocking) do
       @count += 1
       block.call
     ensure

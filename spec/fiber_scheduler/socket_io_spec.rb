@@ -12,25 +12,23 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
     let(:sent) { "ruby" }
     let(:received) { messages.first }
 
-    let(:operations) do
-      -> do
-        Fiber.schedule do
-          order << 1
-          messages << reader.read(sent.size)
-          reader.close
-          order << 6
-        end
-
-        order << 2
-
-        Fiber.schedule do
-          order << 3
-          writer.write(sent)
-          writer.close
-          order << 4
-        end
-        order << 5
+    def operations
+      Fiber.schedule do
+        order << 1
+        messages << reader.read(sent.size)
+        reader.close
+        order << 6
       end
+
+      order << 2
+
+      Fiber.schedule do
+        order << 3
+        writer.write(sent)
+        writer.close
+        order << 4
+      end
+      order << 5
     end
 
     it "calls #io_read and #io_write" do
@@ -41,17 +39,17 @@ RSpec.shared_examples FiberSchedulerSpec::SocketIO do
         .to receive(:io_write).once
         .and_call_original
 
-      setup.call
+      setup
     end
 
     it "writes and reads a message" do
-      setup.call
+      setup
 
       expect(received).to eq sent
     end
 
     it "behaves async" do
-      setup.call
+      setup
 
       expect(order).to eq (1..6).to_a
     end
@@ -65,11 +63,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

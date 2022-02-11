@@ -8,26 +8,25 @@ RSpec.shared_examples FiberSchedulerSpec::KernelSleep do
 
     context "multiple sleep operations" do
       let(:interval) { 0.1 }
-      let(:operations) do
-        -> do
-          times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-          Fiber.schedule do
-            order << 1
-            sleep interval
-            order << 5
-          end
+      def operations
+        times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-          order << 2
-
-          Fiber.schedule do
-            order << 3
-            sleep interval
-            order << 6
-          end
-
-          order << 4
+        Fiber.schedule do
+          order << 1
+          sleep interval
+          order << 5
         end
+
+        order << 2
+
+        Fiber.schedule do
+          order << 3
+          sleep interval
+          order << 6
+        end
+
+        order << 4
       end
 
       it "calls #kernel_sleep" do
@@ -35,17 +34,17 @@ RSpec.shared_examples FiberSchedulerSpec::KernelSleep do
           .to receive(:kernel_sleep).exactly(2).times
           .and_call_original
 
-        setup.call
+        setup
       end
 
       it "behaves async" do
-        setup.call
+        setup
 
         expect(order).to eq (1..6).to_a
       end
 
       it "runs operations in parallel" do
-        setup.call
+        setup
         times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
         expect(duration).to be >= interval
@@ -54,18 +53,16 @@ RSpec.shared_examples FiberSchedulerSpec::KernelSleep do
     end
 
     context "sleep 0" do
-      let(:operations) do
-        -> do
-          times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      def operations
+        times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-          Fiber.schedule do
-            order << 1
-            sleep 0
-            times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
-            order << 3
-          end
-          order << 2
+        Fiber.schedule do
+          order << 1
+          sleep 0
+          times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          order << 3
         end
+        order << 2
       end
 
       it "calls #kernel_sleep" do
@@ -73,17 +70,17 @@ RSpec.shared_examples FiberSchedulerSpec::KernelSleep do
           .to receive(:kernel_sleep).once
           .and_call_original
 
-        setup.call
+        setup
       end
 
       it "behaves async" do
-        setup.call
+        setup
 
         expect(order).to eq (1..3).to_a
       end
 
       it "runs the operation in no time" do
-        setup.call
+        setup
 
         # No sleeping was performed at all.
         expect(duration).to be < 0.0005
@@ -99,11 +96,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

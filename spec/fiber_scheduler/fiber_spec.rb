@@ -5,10 +5,8 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
     let(:fibers) { [] }
     let(:fiber) { fibers.first }
 
-    let(:operations) do
-      -> do
-        fibers << Fiber.schedule {}
-      end
+    def operations
+      fibers << Fiber.schedule {}
     end
 
     it "calls #fiber" do
@@ -16,7 +14,7 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
         .to receive(:fiber).once
         .and_call_original
 
-      setup.call
+      setup
     end
 
     it "creates a fiber" do
@@ -25,7 +23,7 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
         GC.disable
 
         before = ObjectSpace.each_object(Fiber).count
-        setup.call
+        setup
         after = ObjectSpace.each_object(Fiber).count
 
         # The after - before is > 1 with the built-in selector.
@@ -36,7 +34,7 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
     end
 
     it "creates a non-blocking fiber" do
-      setup.call
+      setup
 
       expect(fiber).to be_a Fiber
       expect(fiber).not_to be_blocking
@@ -51,11 +49,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations.call
         end
       end
 

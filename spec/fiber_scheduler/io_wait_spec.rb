@@ -7,29 +7,28 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
       let(:pair) { UNIXSocket.pair }
       let(:reader) { pair.first }
       let(:writer) { pair.last }
-      let(:operations) do
-        -> do
-          Fiber.schedule do
-            order << 1
-            reader.wait_readable
-            reader.close
-            order << 6
-          end
 
-          order << 2
-
-          Fiber.schedule do
-            order << 3
-            writer.write(".")
-            writer.close
-            order << 4
-          end
-          order << 5
+      def operations
+        Fiber.schedule do
+          order << 1
+          reader.wait_readable
+          reader.close
+          order << 6
         end
+
+        order << 2
+
+        Fiber.schedule do
+          order << 3
+          writer.write(".")
+          writer.close
+          order << 4
+        end
+        order << 5
       end
 
       it "behaves async" do
-        setup.call
+        setup
 
         expect(order).to eq (1..6).to_a
       end
@@ -39,7 +38,7 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
           .to receive(:io_wait).once
           .and_call_original
 
-        setup.call
+        setup
       end
     end
 
@@ -48,19 +47,18 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
       let(:pair) { UNIXSocket.pair }
       let(:reader) { pair.first }
       let(:writer) { pair.last }
-      let(:operations) do
-        -> do
-          Fiber.schedule do
-            order << 1
-            reader.wait_readable(0.001)
-            order << 3
-          end
-          order << 2
+
+      def operations
+        Fiber.schedule do
+          order << 1
+          reader.wait_readable(0.001)
+          order << 3
         end
+        order << 2
       end
 
       it "behaves async" do
-        setup.call
+        setup
 
         expect(order).to eq (1..3).to_a
       end
@@ -70,7 +68,7 @@ RSpec.shared_examples FiberSchedulerSpec::IOWait do
           .to receive(:io_wait).once
           .and_call_original
 
-        setup.call
+        setup
       end
     end
   end
@@ -83,11 +81,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

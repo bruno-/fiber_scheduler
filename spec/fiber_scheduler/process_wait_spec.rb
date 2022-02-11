@@ -7,28 +7,26 @@ RSpec.shared_examples FiberSchedulerSpec::ProcessWait do
     let(:order) { [] }
     let(:times) { [] }
     let(:duration) { times[1] - times[0] }
-    let(:operations) do
-      -> do
-        times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    def operations
+      times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
-        Fiber.schedule do
-          order << 1
-          # This interval is shorter so we're certain it will finish before the
-          # other fiber.
-          Process.wait(spawn("sleep #{interval_short}"))
-          order << 5
-        end
-
-        order << 2
-
-        Fiber.schedule do
-          order << 3
-          Process.wait(spawn("sleep #{interval}"))
-          order << 6
-        end
-
-        order << 4
+      Fiber.schedule do
+        order << 1
+        # This interval is shorter so we're certain it will finish before the
+        # other fiber.
+        Process.wait(spawn("sleep #{interval_short}"))
+        order << 5
       end
+
+      order << 2
+
+      Fiber.schedule do
+        order << 3
+        Process.wait(spawn("sleep #{interval}"))
+        order << 6
+      end
+
+      order << 4
     end
 
     it "calls #process_wait" do
@@ -36,17 +34,17 @@ RSpec.shared_examples FiberSchedulerSpec::ProcessWait do
         .to receive(:process_wait).exactly(2).times
         .and_call_original
 
-      setup.call
+      setup
     end
 
     it "behaves async" do
-      setup.call
+      setup
 
       expect(order).to eq (1..6).to_a
     end
 
     it "runs operations in parallel" do
-      setup.call
+      setup
       times << Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
       expect(duration).to be >= interval
@@ -62,11 +60,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

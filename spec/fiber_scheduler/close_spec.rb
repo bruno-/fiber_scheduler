@@ -5,13 +5,11 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
   context "without #run" do
     let(:order) { [] }
 
-    let(:operations) do
-      lambda do
-        Fiber.schedule do
-          order << 2
-        end
-        order << 1
+    def operations
+      Fiber.schedule do
+        order << 2
       end
+      order << 1
     end
 
     # NOTE: this example does not use 'setup', #run should not be invoked
@@ -25,13 +23,13 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
         Thread.new do
           Fiber.set_scheduler(scheduler)
 
-          operations.call
+          operations
         end.join
       end
     end
 
     it "behaves async" do
-      setup.call
+      setup
 
       expect(order).to contain_exactly(1, 2)
     end
@@ -40,42 +38,36 @@ RSpec.shared_examples FiberSchedulerSpec::Close do
   context "with #run" do
     let(:order) { [] }
 
-    let(:operations) do
-      lambda do
-        Fiber.schedule do
-          order << 2
-        end
-
-        order << 1
-        Fiber.scheduler.run
-        order << 3
-
-        Fiber.schedule do
-          order << 4
-        end
-
-        order << 5
+    def operations
+      Fiber.schedule do
+        order << 2
       end
+
+      order << 1
+      Fiber.scheduler.run
+      order << 3
+
+      Fiber.schedule do
+        order << 4
+      end
+
+      order << 5
     end
 
-    # NOTE: this example does not use 'setup'
-    if method_defined?(:default_setup)
-      # skipping if user overrode setup
-      it "calls #close" do
-        expect(scheduler)
-          .to receive(:close).once
-          .and_call_original
+    it "calls #close" do
+      expect(scheduler)
+        .to receive(:close).once
+        .and_call_original
 
-        Thread.new do
-          Fiber.set_scheduler(scheduler)
-          operations.call
-          scheduler.run
-        end.join
-      end
+      Thread.new do
+        Fiber.set_scheduler(scheduler)
+        operations
+        scheduler.run
+      end.join
     end
 
     it "behaves async" do
-      setup.call
+      setup
 
       expect(order).to contain_exactly(1, 2, 3, 4, 5)
     end

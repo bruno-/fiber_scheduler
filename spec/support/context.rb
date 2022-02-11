@@ -37,17 +37,12 @@ RSpec.shared_context FiberSchedulerSpec::Context do
   unless method_defined?(:scheduler)
     subject(:scheduler) { scheduler_class.new }
   end
-  unless method_defined?(:setup)
-    let(:default_setup) { true }
-    let(:setup) do
-      -> do
-        Fiber.set_scheduler(scheduler)
+  def setup
+    ::Fiber.set_scheduler(scheduler)
 
-        operations.call
+    operations
 
-        scheduler.run
-      end
-    end
+    scheduler.run
   end
 
   around do |example|

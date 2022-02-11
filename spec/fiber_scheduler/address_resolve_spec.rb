@@ -5,23 +5,22 @@ RSpec.shared_examples FiberSchedulerSpec::AddressResolve do
 
   context "Addrinfo.getaddrinfo" do
     let(:order) { [] }
-    let(:operations) do
-      lambda do
-        Fiber.schedule do
-          order << 1
-          Addrinfo.getaddrinfo("example.com", 80, :AF_INET, :STREAM)
-          order << 5
-        end
 
-        order << 2
-
-        Fiber.schedule do
-          order << 3
-          Addrinfo.getaddrinfo("example.com", 80, :AF_INET, :STREAM)
-          order << 6
-        end
-        order << 4
+    def operations
+      Fiber.schedule do
+        order << 1
+        Addrinfo.getaddrinfo("example.com", 80, :AF_INET, :STREAM)
+        order << 5
       end
+
+      order << 2
+
+      Fiber.schedule do
+        order << 3
+        Addrinfo.getaddrinfo("example.com", 80, :AF_INET, :STREAM)
+        order << 6
+      end
+      order << 4
     end
 
     it "calls #address_resolve" do
@@ -29,11 +28,11 @@ RSpec.shared_examples FiberSchedulerSpec::AddressResolve do
         .to receive(:address_resolve).exactly(2).times
         .and_call_original
 
-      setup.call
+      setup
     end
 
     it "behaves async" do
-      setup.call
+      setup
 
       expect(order).to eq (1..6).to_a
     end
@@ -47,11 +46,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with #call setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

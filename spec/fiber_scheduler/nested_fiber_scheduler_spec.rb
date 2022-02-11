@@ -6,46 +6,43 @@ RSpec.describe FiberScheduler do
       let(:order) { [] }
 
       context "with only sync operations" do
-        let(:operations) do
-          -> do
+        def operations
+          FiberScheduler do
+            order << 1
             FiberScheduler do
-              order << 1
-              FiberScheduler do
-                order << 2
-              end
-              order << 3
+              order << 2
             end
+            order << 3
           end
         end
 
         it "behaves sync" do
-          setup.call
+          setup
 
           expect(order).to eq [1, 2, 3]
         end
       end
 
       context "with async operations" do
-        let(:operations) do
-          -> do
-            FiberScheduler do
-              order << 1
-              sleep 0
-              order << 3
+        def operations
+          FiberScheduler do
+            order << 1
+            sleep 0
+            order << 3
 
-              FiberScheduler do
-                order << 4
-                sleep 0
+            FiberScheduler do
+              order << 4
+              sleep 0
               order << 6
-              end
-              order << 5
             end
-            order << 2
+
+            order << 5
           end
+          order << 2
         end
 
         it "behaves async" do
-          setup.call
+          setup
 
           expect(order).to eq (1..6).to_a
         end
@@ -57,11 +54,9 @@ RSpec.describe FiberScheduler do
     end
 
     context "with block setup" do
-      let(:setup) do
-        -> do
-          FiberScheduler do
-            operations.call
-          end
+      def setup
+        FiberScheduler do
+          operations
         end
       end
 

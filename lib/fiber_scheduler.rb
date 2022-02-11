@@ -31,18 +31,18 @@ class FiberScheduler
   def initialize
     @fiber = Fiber.current
     @selector =
-      if defined?(IO::Event)
-        IO::Event::Selector.new(Fiber.current)
-      else
-        Selector.new(Fiber.current)
-      end
+      # if defined?(IO::Event)
+      #   IO::Event::Selector.new(Fiber.current)
+      # else
+        Selector.new(@fiber)
+      # end
     @timeouts = Timeouts.new
 
     @count = 0
     @nested = []
   end
 
-  def run
+  def run(loop: true)
     while @count > 0
       if @nested.empty?
         @selector.select(@timeouts.interval)
@@ -53,6 +53,8 @@ class FiberScheduler
           fiber.transfer
         end
       end
+
+      break unless loop # if 'loop == false' run the iteration only once
     end
   end
 
@@ -69,7 +71,7 @@ class FiberScheduler
     end
   end
 
-  def block(blocker, duration)
+  def block(blocker, duration = nil)
     return @selector.transfer unless duration
 
     @timeouts.timeout(duration, method: :transfer) do
@@ -115,20 +117,52 @@ class FiberScheduler
     @timeouts.timeout(duration, exception, message, &block)
   end
 
-  def fiber(blocking: false, &block)
+  def fiber(blocking: false, wait: false, &block)
     current = Fiber.current
-    if current != @fiber
-      # nested Fiber.schedule
-      @nested << current
-    end
 
-    fiber = Fiber.new(blocking: blocking) do
-      @count += 1
-      block.call
-    ensure
-      @count -= 1
-    end
+    if blocking
+      # All fibers wait on a blocking fiber, so 'wait' option is irrelevant.
+      Fiber.new(blocking: true, &block).tap(&:resume)
+    elsif wait
+      finished = false # prevents races
+      fiber = Fiber.new(blocking: false) do
+        @count += 1
+        block.call
+      ensure
+        @count -= 1
+        finished = true
+        # Resume waiting parent fiber
+        current.transfer
+      end
+      fiber.transfer
 
-    fiber.tap(&:transfer)
+      # Current fiber is waiting until waiting fiber finishes.
+      unless finished
+        if current == @fiber
+          # In a top-level fiber, there's nothing we can transfer to, so run
+          # other fibers (or just block) until waiting fiber finishes.
+          until finished
+            run(loop: false)
+          end
+        else
+          @selector.transfer
+        end
+      end
+
+      fiber
+    else
+      if current != @fiber
+        # nested Fiber.schedule
+        @nested << current
+      end
+
+      fiber = Fiber.new(blocking: false) do
+        @count += 1
+        block.call
+      ensure
+        @count -= 1
+      end
+      fiber.tap(&:transfer)
+    end
   end
 end

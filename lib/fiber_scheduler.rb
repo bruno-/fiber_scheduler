@@ -62,11 +62,8 @@ class FiberScheduler
   def block(blocker, duration)
     return @selector.transfer unless duration
 
-    timeout = @timeouts.transfer_in(duration)
-    begin
+    @timeouts.transfer_in(duration) do
       @selector.transfer
-    ensure
-      timeout.disable
     end
   end
 
@@ -87,11 +84,8 @@ class FiberScheduler
   def io_wait(io, events, duration = nil)
     return @selector.io_wait(Fiber.current, io, events) unless duration
 
-    timeout = @timeouts.transfer_in(duration)
-    begin
+    @timeouts.transfer_in(duration) do
       @selector.io_wait(Fiber.current, io, events)
-    ensure
-      timeout.disable
     end
   end
 
@@ -107,13 +101,8 @@ class FiberScheduler
     @selector.process_wait(Fiber.current, pid, flags)
   end
 
-  def timeout_after(duration, exception = TimeoutError, message = "timeout")
-    timeout = @timeouts.raise_in(duration, exception, message)
-    begin
-      yield duration
-    ensure
-      timeout.disable
-    end
+  def timeout_after(duration, exception = TimeoutError, message = "timeout", &block)
+    @timeouts.raise_in(duration, exception, message, &block)
   end
 
   def fiber(&block)

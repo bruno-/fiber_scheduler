@@ -18,12 +18,12 @@ class FiberScheduler
       end
     end
 
-    def raise_in(duration, *args, **options)
-      call_in(duration, :raise, *args, **options)
+    def raise_in(duration, *args, **options, &block)
+      call_in(duration, :raise, *args, **options, &block)
     end
 
-    def transfer_in(duration, *args, **options)
-      call_in(duration, :transfer, *args, **options)
+    def transfer_in(duration, *args, **options, &block)
+      call_in(duration, :transfer, *args, **options, &block)
     end
 
     def interval
@@ -45,38 +45,43 @@ class FiberScheduler
 
     private
 
-    def call_in(duration, action, *args, fiber: Fiber.current)
+    def call_in(duration, action, *args, fiber: Fiber.current, &block)
       timeout = Timeout.new(duration, fiber, action, *args)
 
       if @timeouts.empty?
         @timeouts << timeout
-        return timeout
-      end
+      else
+        # binary search
+        min = 0
+        max = @timeouts.size - 1
+        while min <= max
+          index = (min + max) / 2
+          t = @timeouts[index]
 
-      # binary search
-      min = 0
-      max = @timeouts.size - 1
-      while min <= max
-        index = (min + max) / 2
-        t = @timeouts[index]
-
-        if t > timeout
-          if index.zero? || @timeouts[index - 1] <= timeout
-            # found it
-            break
+          if t > timeout
+            if index.zero? || @timeouts[index - 1] <= timeout
+              # found it
+              break
+            else
+              # @timeouts[index - 1] > timeout
+              max = index - 1
+            end
           else
-            # @timeouts[index - 1] > timeout
-            max = index - 1
+            # t <= timeout
+            index += 1
+            min = index
           end
-        else
-          # t <= timeout
-          index += 1
-          min = index
         end
+
+        @timeouts.insert(index, timeout)
       end
 
-      @timeouts.insert(index, timeout)
-      timeout
+      begin
+        block.call
+      ensure
+        # Timeout is disabled if the block finishes earlier.
+        timeout.disable
+      end
     end
   end
 end

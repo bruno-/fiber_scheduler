@@ -4,10 +4,10 @@ class FiberScheduler
 
     attr_reader :time
 
-    def initialize(duration, fiber, action, *args)
+    def initialize(duration, fiber, method, *args)
       @time = Process.clock_gettime(Process::CLOCK_MONOTONIC) + duration
       @fiber = fiber
-      @action = action
+      @method = method
       @args = args
 
       @disabled = nil
@@ -22,7 +22,7 @@ class FiberScheduler
     def call
       return unless @fiber.alive?
 
-      @fiber.public_send(@action, *@args)
+      @fiber.public_send(@method, *@args)
     end
 
     def interval

@@ -18,35 +18,8 @@ class FiberScheduler
       end
     end
 
-    def raise_in(duration, *args, **options, &block)
-      call_in(duration, :raise, *args, **options, &block)
-    end
-
-    def transfer_in(duration, *args, **options, &block)
-      call_in(duration, :transfer, *args, **options, &block)
-    end
-
-    def interval
-      # Prune disabled timeouts
-      while @timeouts.first&.disabled?
-        @timeouts.shift
-      end
-
-      return if @timeouts.empty?
-
-      interval = @timeouts.first.interval
-
-      interval >= 0 ? interval : 0
-    end
-
-    def inspect
-      @timeouts.inspect
-    end
-
-    private
-
-    def call_in(duration, action, *args, fiber: Fiber.current, &block)
-      timeout = Timeout.new(duration, fiber, action, *args)
+    def timeout(duration, *args, method: :raise, fiber: Fiber.current, &block)
+      timeout = Timeout.new(duration, fiber, method, *args)
 
       if @timeouts.empty?
         @timeouts << timeout
@@ -82,6 +55,23 @@ class FiberScheduler
         # Timeout is disabled if the block finishes earlier.
         timeout.disable
       end
+    end
+
+    def interval
+      # Prune disabled timeouts
+      while @timeouts.first&.disabled?
+        @timeouts.shift
+      end
+
+      return if @timeouts.empty?
+
+      interval = @timeouts.first.interval
+
+      interval >= 0 ? interval : 0
+    end
+
+    def inspect
+      @timeouts.inspect
     end
   end
 end

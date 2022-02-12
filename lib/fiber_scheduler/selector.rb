@@ -39,7 +39,7 @@ class FiberScheduler
     def initialize(fiber)
       @fiber = fiber
 
-      @waiting = Hash.new.compare_by_identity
+      @waiting = {}.compare_by_identity
       @ready = []
     end
 

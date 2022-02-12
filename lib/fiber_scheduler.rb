@@ -29,37 +29,35 @@ module Kernel
         # for a nested FiberScheduler call.
         Fiber.schedule(blocking: blocking, waiting: waiting, &block)
 
-      else
         # Unknown fiber scheduler class; can't just pass options to
         # Fiber.schedule, handle each option separately.
-        if blocking
-          Fiber.new(blocking: true, &block).tap(&:resume)
+      elsif blocking
+        Fiber.new(blocking: true, &block).tap(&:resume)
 
-        elsif waiting
-          current = Fiber.current
-          finished = false # prevents races
-          fiber = Fiber.schedule do
-            block.call
-          ensure
-            # Resume waiting parent fiber
-            finished = true
-            scheduler.unblock(nil, current)
-          end
-
-          if Fiber.blocking?
-            # In a blocking fiber, which is potentially also a loopo fiber so
-            # there's nothing we can transfer to. Run other fibers (or just
-            # block) until waiting fiber finishes.
-            until finished
-              scheduler.run_once
-            end
-          else
-            scheduler.block(nil, nil) unless finished
-          end
-
-        else
-          Fiber.schedule(&block)
+      elsif waiting
+        current = Fiber.current
+        finished = false # prevents races
+        Fiber.schedule do
+          block.call
+        ensure
+          # Resume waiting parent fiber
+          finished = true
+          scheduler.unblock(nil, current)
         end
+
+        if Fiber.blocking?
+          # In a blocking fiber, which is potentially also a loopo fiber so
+          # there's nothing we can transfer to. Run other fibers (or just
+          # block) until waiting fiber finishes.
+          until finished
+            scheduler.run_once
+          end
+        else
+          scheduler.block(nil, nil) unless finished
+        end
+
+      else
+        Fiber.schedule(&block)
       end
     end
   end
@@ -70,7 +68,7 @@ class FiberScheduler
     @fiber = Fiber.current
     @selector =
       if defined?(IO::Event)
-        IO::Event::Selector.new(Fiber.current)
+        IO::Event::Selector.new(@fiber)
       else
         Selector.new(@fiber)
       end

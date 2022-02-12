@@ -18,19 +18,17 @@ RSpec.shared_examples FiberSchedulerSpec::Fiber do
     end
 
     it "creates a fiber" do
-      begin
-        # Prevent GC running inbetween two ObjectSpace calls.
-        GC.disable
+      # Prevent GC running inbetween two ObjectSpace calls.
+      GC.disable
 
-        before = ObjectSpace.each_object(Fiber).count
-        setup
-        after = ObjectSpace.each_object(Fiber).count
+      before = ObjectSpace.each_object(Fiber).count
+      setup
+      after = ObjectSpace.each_object(Fiber).count
 
-        # The after - before is > 1 with the built-in selector.
-        expect(after - before).to be >= 1
-      ensure
-        GC.enable
-      end
+      # The after - before is > 1 with the built-in selector.
+      expect(after - before).to be >= 1
+    ensure
+      GC.enable
     end
 
     it "creates a non-blocking fiber" do

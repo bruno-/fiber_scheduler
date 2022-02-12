@@ -46,7 +46,7 @@ RSpec.describe FiberScheduler::Timeouts do
         setup
         sleep 0.11
 
-        expect(order).to eq (-10.step(10, 2)).to_a
+        expect(order).to eq(-10.step(10, 2).to_a)
       end
     end
   end

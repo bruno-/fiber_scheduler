@@ -9,7 +9,7 @@ rescue LoadError
 end
 
 module Kernel
-  def FiberScheduler(wait: true, **opts, &block)
+  def FiberScheduler(blocking: false, wait: true, &block)
     if Fiber.scheduler.nil?
       scheduler = FiberScheduler.new
       Fiber.set_scheduler(scheduler)
@@ -22,14 +22,44 @@ module Kernel
       end
 
     else
+      scheduler = Fiber.scheduler
       # Fiber.scheduler already set, just schedule a fiber.
-      if Fiber.scheduler.is_a?(FiberScheduler)
+      if scheduler.is_a?(FiberScheduler)
         # The default wait is 'true' as that is the most intuitive behavior
         # for a nested FiberScheduler call.
-        Fiber.schedule(wait: wait, **opts, &block)
+        Fiber.schedule(blocking: blocking, wait: wait, &block)
+
       else
-        # Unknown fiber scheduler class, schedule a fiber without options.
-        Fiber.schedule(&block)
+        # Unknown fiber scheduler class; can't just pass options to
+        # Fiber.schedule, handle each option separately.
+        if blocking
+          Fiber.new(blocking: true, &block).tap(&:resume)
+
+        elsif wait
+          current = Fiber.current
+          finished = false # prevents races
+          fiber = Fiber.schedule do
+            block.call
+          ensure
+            # Resume waiting parent fiber
+            finished = true
+            scheduler.unblock(nil, current)
+          end
+
+          if Fiber.blocking?
+            # In a blocking fiber, which is potentially also a loopo fiber so
+            # there's nothing we can transfer to. Run other fibers (or just
+            # block) until waiting fiber finishes.
+            until finished
+              scheduler.run_once
+            end
+          else
+            scheduler.block(nil, nil) unless finished
+          end
+
+        else
+          Fiber.schedule(&block)
+        end
       end
     end
   end
@@ -50,19 +80,21 @@ class FiberScheduler
     @nested = []
   end
 
-  def run(loop: true)
+  def run
     while @count > 0
-      if @nested.empty?
-        @selector.select(@timeouts.interval)
-        @timeouts.call
-      else
-        while @nested.any?
-          fiber = @nested.pop
-          fiber.transfer
-        end
-      end
+      run_once
+    end
+  end
 
-      break unless loop # if 'loop == false' run the iteration only once
+  def run_once
+    if @nested.empty?
+      @selector.select(@timeouts.interval)
+      @timeouts.call
+    else
+      while @nested.any?
+        fiber = @nested.pop
+        fiber.transfer
+      end
     end
   end
 
@@ -145,16 +177,14 @@ class FiberScheduler
       fiber.transfer
 
       # Current fiber is waiting until waiting fiber finishes.
-      unless finished
-        if current == @fiber
-          # In a top-level fiber, there's nothing we can transfer to, so run
-          # other fibers (or just block) until waiting fiber finishes.
-          until finished
-            run(loop: false)
-          end
-        else
-          @selector.transfer
+      if current == @fiber
+        # In a top-level fiber, there's nothing we can transfer to, so run
+        # other fibers (or just block) until waiting fiber finishes.
+        until finished
+          run_once
         end
+      else
+        @selector.transfer unless finished
       end
 
       fiber

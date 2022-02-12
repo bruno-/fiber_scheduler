@@ -1,3 +1,5 @@
+require "fiber_scheduler_spec/context"
+
 RSpec.describe FiberScheduler do
   describe "nested FiberScheduler" do
     shared_examples :nested_fiber_scheduler do

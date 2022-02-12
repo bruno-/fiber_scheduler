@@ -1,3 +1,5 @@
+require "fiber_scheduler_spec/context"
+
 RSpec.describe FiberScheduler::Timeouts do
   describe "#call" do
     include_context FiberSchedulerSpec::Context

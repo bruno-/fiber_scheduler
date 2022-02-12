@@ -13,6 +13,7 @@ Gem::Specification.new do |gem|
   gem.license = "MIT"
 
   gem.add_development_dependency "async", "~> 2"
+  gem.add_development_dependency "fiber_scheduler_spec", "~> 0.0"
   gem.add_development_dependency "rspec", "~> 3.11"
   gem.add_development_dependency "standard", "~> 1.7"
 end

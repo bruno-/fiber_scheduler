@@ -1,4 +1,5 @@
 require "async"
+require "fiber_scheduler_spec/context"
 
 RSpec.describe FiberScheduler do
   describe "async compatibility" do

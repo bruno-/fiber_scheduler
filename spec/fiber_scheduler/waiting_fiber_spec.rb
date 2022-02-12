@@ -1,3 +1,5 @@
+require "fiber_scheduler_spec/context"
+
 RSpec.describe FiberScheduler do
   describe "waiting fiber" do
     include_context FiberSchedulerSpec::Context

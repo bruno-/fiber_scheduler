@@ -50,10 +50,10 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with 'wait: false' option" do
+      context "with 'waiting: false' option" do
         context "with async operations" do
           def operations
-            FiberScheduler(wait: false) do
+            FiberScheduler(waiting: false) do
               order << 1
               sleep 0
               order << 3

@@ -73,7 +73,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(wait: true) do
+          Fiber.schedule(waiting: true) do
             order << 3
 
             Fiber.schedule(blocking: true) do

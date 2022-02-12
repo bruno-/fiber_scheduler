@@ -18,7 +18,7 @@ RSpec.describe FiberScheduler do
 
             order << 2
 
-            FiberScheduler do # default 'wait: true' option
+            FiberScheduler do # default 'waiting: true' option
               order << 3
               Fiber.schedule do
                 order << 4
@@ -90,7 +90,7 @@ RSpec.describe FiberScheduler do
 
             order << 3
 
-            FiberScheduler(wait: false) do
+            FiberScheduler(waiting: false) do
               order << 4
               Fiber.schedule do
                 order << 5
@@ -124,7 +124,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          FiberScheduler do # default 'wait: true' option
+          FiberScheduler do # default 'waiting: true' option
             order << 3
             Fiber.schedule do
               order << 4
@@ -204,7 +204,7 @@ RSpec.describe FiberScheduler do
 
           order << 3
 
-          FiberScheduler(wait: false) do
+          FiberScheduler(waiting: false) do
             order << 4
             Fiber.schedule do
               order << 5

@@ -9,7 +9,7 @@ rescue LoadError
 end
 
 module Kernel
-  def FiberScheduler(blocking: false, wait: true, &block)
+  def FiberScheduler(blocking: false, waiting: true, &block)
     if Fiber.scheduler.nil?
       scheduler = FiberScheduler.new
       Fiber.set_scheduler(scheduler)
@@ -25,9 +25,9 @@ module Kernel
       scheduler = Fiber.scheduler
       # Fiber.scheduler already set, just schedule a fiber.
       if scheduler.is_a?(FiberScheduler)
-        # The default wait is 'true' as that is the most intuitive behavior
+        # The default waiting is 'true' as that is the most intuitive behavior
         # for a nested FiberScheduler call.
-        Fiber.schedule(blocking: blocking, wait: wait, &block)
+        Fiber.schedule(blocking: blocking, waiting: waiting, &block)
 
       else
         # Unknown fiber scheduler class; can't just pass options to
@@ -35,7 +35,7 @@ module Kernel
         if blocking
           Fiber.new(blocking: true, &block).tap(&:resume)
 
-        elsif wait
+        elsif waiting
           current = Fiber.current
           finished = false # prevents races
           fiber = Fiber.schedule do
@@ -157,13 +157,13 @@ class FiberScheduler
     @timeouts.timeout(duration, exception, message, &block)
   end
 
-  def fiber(blocking: false, wait: false, &block)
+  def fiber(blocking: false, waiting: false, &block)
     current = Fiber.current
 
     if blocking
-      # All fibers wait on a blocking fiber, so 'wait' option is ignored.
+      # All fibers wait on a blocking fiber, so 'waiting' option is ignored.
       Fiber.new(blocking: true, &block).tap(&:resume)
-    elsif wait
+    elsif waiting
       finished = false # prevents races
       fiber = Fiber.new(blocking: false) do
         @count += 1

@@ -5,46 +5,67 @@ RSpec.describe FiberScheduler do
 
       let(:order) { [] }
 
-      context "with only sync operations" do
-        def operations
-          FiberScheduler do
-            order << 1
+      context "with default arguments" do
+        context "with only blocking operations" do
+          def operations
             FiberScheduler do
-              order << 2
+              order << 1
+              FiberScheduler do
+                order << 2
+              end
+              order << 3
             end
-            order << 3
+          end
+
+          it "behaves sync" do
+            setup
+
+            expect(order).to eq [1, 2, 3]
           end
         end
 
-        it "behaves sync" do
-          setup
+        context "with non-blocking operations" do
+          def operations
+            FiberScheduler do
+              order << 1
+              sleep 0
+              order << 2
 
-          expect(order).to eq [1, 2, 3]
+              FiberScheduler do
+                order << 3
+                sleep 0
+                order << 4
+              end
+
+              order << 5
+            end
+            order << 6
+          end
+
+          it "behaves synchronous" do
+            setup
+
+            expect(order).to eq (1..6).to_a
+          end
         end
       end
 
-      context "with async operations" do
-        def operations
-          FiberScheduler do
-            order << 1
-            sleep 0
-            order << 3
-
-            FiberScheduler do
-              order << 4
+      context "with 'wait: false' option" do
+        context "with async operations" do
+          def operations
+            FiberScheduler(wait: false) do
+              order << 1
               sleep 0
-              order << 6
+              order << 3
             end
-
-            order << 5
+            order << 2
           end
-          order << 2
-        end
 
-        it "behaves async" do
-          setup
+          it "behaves async" do
+            setup
 
-          expect(order).to eq (1..6).to_a
+            expect(order).to eq (1..3).to_a
+          end
         end
       end
     end

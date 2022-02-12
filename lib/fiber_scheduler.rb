@@ -9,7 +9,7 @@ rescue LoadError
 end
 
 module Kernel
-  def FiberScheduler(&block)
+  def FiberScheduler(wait: true, **opts, &block)
     if Fiber.scheduler.nil?
       scheduler = FiberScheduler.new
       Fiber.set_scheduler(scheduler)
@@ -20,9 +20,17 @@ module Kernel
       ensure
         Fiber.set_scheduler(nil)
       end
+
     else
-      # Fiber.scheduler already set, just schedule a task.
-      Fiber.schedule(&block)
+      # Fiber.scheduler already set, just schedule a fiber.
+      if Fiber.scheduler.is_a?(FiberScheduler)
+        # The default wait is 'true' as that is the most intuitive behavior
+        # for a nested FiberScheduler call.
+        Fiber.schedule(wait: wait, **opts, &block)
+      else
+        # Unknown fiber scheduler class, schedule a fiber without options.
+        Fiber.schedule(&block)
+      end
     end
   end
 end

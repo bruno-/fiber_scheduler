@@ -14,6 +14,5 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "async", "~> 2"
   gem.add_development_dependency "rspec", "~> 3.11"
-  gem.add_development_dependency "rubocop-rspec", "~> 2.8"
   gem.add_development_dependency "standard", "~> 1.7"
 end

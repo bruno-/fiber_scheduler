@@ -1,3 +1,3 @@
 class FiberScheduler
-  VERSION = "0.0.2".freeze
+  VERSION = "0.9.0".freeze
 end

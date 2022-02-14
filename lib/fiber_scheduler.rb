@@ -1,4 +1,5 @@
 require "resolv"
+require_relative "fiber_scheduler/compatibility"
 require_relative "fiber_scheduler/selector"
 require_relative "fiber_scheduler/timeouts"
 
@@ -31,33 +32,47 @@ module Kernel
 
         # Unknown fiber scheduler class; can't just pass options to
         # Fiber.schedule, handle each option separately.
-      elsif blocking
-        Fiber.new(blocking: true, &block).tap(&:resume)
-
-      elsif waiting
-        current = Fiber.current
-        finished = false # prevents races
-        Fiber.schedule do
-          block.call
-        ensure
-          # Resume waiting parent fiber
-          finished = true
-          scheduler.unblock(nil, current)
-        end
-
-        if Fiber.blocking?
-          # In a blocking fiber, which is potentially also a loopo fiber so
-          # there's nothing we can transfer to. Run other fibers (or just
-          # block) until waiting fiber finishes.
-          until finished
-            scheduler.run_once
-          end
-        else
-          scheduler.block(nil, nil) unless finished
-        end
-
       else
-        Fiber.schedule(&block)
+        scheduler.singleton_class.prepend(FiberScheduler::Compatibility)
+
+        if blocking
+          fiber = Fiber.new(blocking: true) do
+            FiberScheduler::Compatibility.set_internal!
+            yield
+          end
+          fiber.tap(&:resume)
+
+        elsif waiting
+          parent = Fiber.current
+          finished = false # prevents races
+          blocking = false # prevents #unblock-ing a fiber that never blocked
+
+          Fiber.schedule do
+            FiberScheduler::Compatibility.set_internal!
+            yield
+          ensure
+            finished = true
+            scheduler.unblock(nil, parent) if blocking
+          end
+
+          if Fiber.blocking?
+            # In a blocking fiber, which is potentially also a loop fiber so
+            # there's nothing we can transfer to. Run other fibers (or just
+            # block) until waiting fiber finishes.
+            until finished
+              scheduler.run_once
+            end
+          elsif !finished
+            blocking = true
+            scheduler.block(nil, nil)
+          end
+
+        else
+          Fiber.schedule do
+            FiberScheduler::Compatibility.set_internal!
+            yield
+          end
+        end
       end
     end
   end
@@ -181,8 +196,8 @@ class FiberScheduler
         until finished
           run_once
         end
-      else
-        @selector.transfer unless finished
+      elsif !finished
+        @selector.transfer
       end
 
       fiber

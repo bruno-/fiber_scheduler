@@ -1,30 +1,22 @@
 # Fiber scheduler
 
-Fiber scheduler enables asynchronous programming in Ruby.
-
-This gem is a vanilla implementation of the fiber scheduler Ruby feature.
-
-A performant fiber scheduler implemented in pure Ruby.
-
-Pure-Ruby fiber scheduler that enables asynchronous programming.
+Enables asynchronous programming in Ruby.
 
 ### Highlights
 
 - Asynchronous (colorless) programming in Ruby.
-- ~400 LOC of Ruby.
-- Only uses built-in Ruby methods:
-[Fiber.set_scheduler](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-set_scheduler)
-and
-[Fiber.schedule](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-schedule).
+- Not a framework: no DSL or new APIs. Just built-in Ruby methods:
+  [Fiber.set_scheduler](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-set_scheduler)
+  and
+  [Fiber.schedule](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-schedule).
+- ~400 LOC of pure Ruby, no C extensions.
 - No dependencies.
-- No C extensions.
 - No monkey patching.
-- Not a framework: no DSL or new APIs.
 
 ### Setup
 
 1. With a block (recommended)
-2. Set Fiber.scheduler directly
+2. Set `Fiber.scheduler` directly
 
 **With a block**
 
@@ -34,7 +26,7 @@ FiberScheduler do
 end
 ```
 
-This is the recommended approach because:
+Recommended because:
 
 - `Fiber.scheduler` is automatically un-set outside the block.
 - This approach has full compatibility with other fiber schedulers, including
@@ -56,11 +48,11 @@ Cons:
 
 - `Fiber.scheduler` is set until the end of the current thread (unless manually
   unset).
-- No compatibility with other fiber schedulers.
+- No compatibility when used alongside other fiber schedulers.
 
 ### Examples
 
-**Basic example**
+#### Basic example
 
 - Basic example running two HTTP requests in parallel:
 
@@ -79,7 +71,7 @@ FiberScheduler do
 end
 ```
 
-**Advanced example**
+#### Advanced example
 
 This example runs various operations in parallel. The program total running
 time is slightly more than 2 seconds, which indicates all the operations ran in
@@ -127,7 +119,7 @@ FiberScheduler do
 end
 ```
 
-**Scaling example**
+#### Scaling example
 
 Easily run thousands and thousands of blocking operations in parallel. This
 program finishes in about 2.5 seconds.
@@ -149,7 +141,7 @@ runs `sleep` which is an "inexpensive" operation. But, if we were to run
 thousands of network requests there would be more overhead (establishing
 TCP connections, SSL handshakes etc) which would prolong program running time.
 
-**Nested Fiber.schedule example**
+#### Nested Fiber.schedule example
 
 It's possible to nest `Fiber.schedule` blocks arbitrarily deep.
 
@@ -178,7 +170,7 @@ FiberScheduler do
 end
 ```
 
-**Waiting Fiber.schedule example**
+#### aiting Fiber.schedule example
 
 Sometimes it's conventient for the parent to wait on the child fiber to
 complete. Use `Fiber.schedule(waiting: true)` to achieve that.
@@ -205,7 +197,7 @@ FiberScheduler do
 end
 ```
 
-**Blocking Fiber.schedule example**
+#### Blocking Fiber.schedule example
 
 Blocking fibers "block" all the other fibers from running until they're
 finished.

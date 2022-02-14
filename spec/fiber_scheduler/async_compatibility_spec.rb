@@ -109,6 +109,123 @@ RSpec.describe FiberScheduler do
           expect(order).to eq (1..10).to_a
         end
       end
+
+      context "with waiting Fiber.schedule" do
+        it "waits on the fiber" do
+          Async do |task|
+            task.async do
+              order << 1
+              sleep 0.001
+              order << 7
+            end
+
+            order << 2
+
+            FiberScheduler do # default 'waiting: true' option
+              order << 3
+              Fiber.schedule do
+                order << 4
+                sleep 0.002
+                order << 8
+              end
+
+              order << 5
+
+              Fiber.schedule(waiting: true) do
+                order << 6
+                sleep 0.003
+                order << 9
+              end
+
+              order << 10
+              sleep 0.001
+              order << 11
+            end
+
+            order << 12
+          end
+
+          expect(order).to eq (1..12).to_a
+        end
+      end
+
+      context "with blocking Fiber.schedule" do
+        it "waits on the fiber" do
+          Async do |task|
+            task.async do
+              order << 1
+              sleep 0.001
+              order << 9
+            end
+
+            order << 2
+
+            FiberScheduler do # default 'waiting: true' option
+              order << 3
+              Fiber.schedule do
+                order << 4
+                sleep 0.002
+                order << 10
+              end
+
+              order << 5
+
+              Fiber.schedule(blocking: true) do
+                order << 6
+                sleep 0.003
+                order << 7
+              end
+
+              order << 8
+              sleep 0.001
+              order << 11
+            end
+
+            order << 12
+          end
+
+          expect(order).to eq (1..12).to_a
+        end
+      end
+
+      context "with blocking FiberScheduler and blocking Fiber.schedule" do
+        it "waits on the fiber" do
+          Async do |task|
+            task.async do
+              order << 1
+              sleep 0.001
+              order << 11
+            end
+
+            order << 2
+
+            FiberScheduler(blocking: true) do
+              order << 3
+              Fiber.schedule do
+                order << 4
+                sleep 0.002
+                order << 12
+              end
+
+              order << 5
+
+              Fiber.schedule(blocking: true) do
+                order << 6
+                sleep 0.003
+                order << 7
+              end
+
+              order << 8
+              sleep 0.001
+              order << 9
+            end
+
+            order << 10
+          end
+
+          expect(order).to eq (1..12).to_a
+        end
+      end
     end
 
     context "with Async::Scheduler" do

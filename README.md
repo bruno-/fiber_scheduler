@@ -2,6 +2,12 @@
 
 Enables asynchronous programming in Ruby.
 
+```
+gem install fiber_scheduler
+```
+
+Requires Ruby 3.1.
+
 ### Highlights
 
 - Asynchronous (colorless) programming in Ruby.
@@ -30,7 +36,7 @@ Recommended because:
 
 - `Fiber.scheduler` is automatically un-set outside the block.
 - This approach has full compatibility with other fiber schedulers, including
-  the [async gem](https://github.com/socketry/async).
+  the [async gem](#async-gem).
 
 **Set Fiber.scheduler directly**
 
@@ -170,13 +176,15 @@ FiberScheduler do
 end
 ```
 
-#### aiting Fiber.schedule example
+#### Waiting Fiber.schedule example
 
 Sometimes it's conventient for the parent to wait on the child fiber to
 complete. Use `Fiber.schedule(waiting: true)` to achieve that.
 
 In the below example fiber labeled `parent` will wait for the `child` fiber to
 complete. Note that only the `parent` fiber waits. Other fibers run as usual.
+
+This example takes 4 seconds to finish
 
 ```ruby
 require "fiber_scheduler"
@@ -202,7 +210,7 @@ end
 Blocking fibers "block" all the other fibers from running until they're
 finished.
 
-This program takes 4 seconds to finish.
+This example takes 4 seconds to finish
 
 ```ruby
 require "fiber_scheduler"
@@ -220,13 +228,65 @@ FiberScheduler do
 end
 ```
 
-### Installation
+### Compatibility with other solutions
 
-```
-gem install fiber_scheduler
+#### [async gem](https://github.com/socketry/async)
+
+`async` is a featurefull asynchronous programming framework.
+If `async` is like Rails, then `fiber_scheduler` is plain Ruby.
+
+`fiber_scheduler` works nicely with `async`:
+
+```ruby
+Async do |task|
+  task.async do
+    # code ...
+  end
+
+  FiberScheduler do
+    Fiber.schedule do
+      # code ...
+    end
+  end
+
+  # ...
+end
 ```
 
-Requires Ruby 3.1.
+Currently the reverse doesn't work:
+
+```ruby
+FiberScheduler do
+  Async do
+    # ...
+  end
+
+  Fiber.schedule do # No scheduler is available! (RuntimeError)
+    # ...
+  end
+end
+```
+
+#### Other fiber scheduler implementations
+
+`fiber_scheduler` works and will work nicely with any other "fiber
+scheduler" (current and future ones). Example:
+
+```ruby
+Fiber.set_scheduler(AnotherScheduler.new)
+
+# stuff
+
+FiberScheduler do
+  # works just fine
+end
+
+# more stuff
+```
+
+`fiber_scheduler` is like choosing pure Ruby: it's a safe choice because you
+know it works and will continue working with everything else in Ruby's
+asynchronous eco-system.
 
 ### Credits
 

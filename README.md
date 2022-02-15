@@ -17,7 +17,6 @@ Requires Ruby 3.1.
   [Fiber.schedule](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-schedule).
 - ~400 LOC of pure Ruby, no C extensions.
 - No dependencies.
-- No monkey patching.
 
 ### Setup
 
@@ -35,8 +34,8 @@ end
 Recommended because:
 
 - `Fiber.scheduler` is automatically un-set outside the block.
-- This approach has full compatibility with other fiber schedulers, including
-  the [async gem](#async-gem).
+- This approach has
+  [full compatibility with any other fiber scheduler](https://github.com/bruno-/fiber_scheduler#compatibility-with-other-fiber-schedulers).
 
 **Set Fiber.scheduler directly**
 
@@ -82,6 +81,10 @@ end
 This example runs various operations in parallel. The program total running
 time is slightly more than 2 seconds, which indicates all the operations ran in
 parallel.
+
+Note that all the operations used in `Fiber.schedule` blocks below are either
+common gems or built-in Ruby methods. They all work asynchronously with this
+library without any monkey patching!
 
 ```ruby
 require "fiber_scheduler"
@@ -182,8 +185,7 @@ Sometimes it's conventient for the parent to wait on the child fiber to
 complete. Use `Fiber.schedule(waiting: true)` to achieve that.
 
 In the below example fiber labeled `parent` will wait for the `child` fiber to
-complete. Note that only the `parent` fiber waits. Other fibers run as usual.
-
+complete. Note that only the `parent` fiber waits, other fibers run as usual.
 This example takes 4 seconds to finish
 
 ```ruby
@@ -228,11 +230,11 @@ FiberScheduler do
 end
 ```
 
-### Compatibility with other solutions
+### Compatibility with other fiber schedulers
 
 #### [async gem](https://github.com/socketry/async)
 
-`async` is a featurefull asynchronous programming framework.
+`async` is an awesome asynchronous programming library, almost a framework.
 If `async` is like Rails, then `fiber_scheduler` is plain Ruby.
 
 `fiber_scheduler` works nicely with `async`:
@@ -253,7 +255,7 @@ Async do |task|
 end
 ```
 
-Currently the reverse doesn't work:
+Currently the opposite doesn't work:
 
 ```ruby
 FiberScheduler do
@@ -269,8 +271,8 @@ end
 
 #### Other fiber scheduler implementations
 
-`fiber_scheduler` works and will work nicely with any other "fiber
-scheduler" (current and future ones). Example:
+`fiber_scheduler` gem works and will work nicely with any other fiber
+scheduler class (current and future ones). Example:
 
 ```ruby
 Fiber.set_scheduler(AnotherScheduler.new)

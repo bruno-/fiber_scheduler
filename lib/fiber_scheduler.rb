@@ -68,10 +68,16 @@ module Kernel
         when :fleeting
           scheduler.unblock(nil, Fiber.current)
 
-          Fiber.new(blocking: false) {
+          fiber = Fiber.new(blocking: false) do
             FiberScheduler::Compatibility.set_internal!
             yield
-          }.transfer
+          rescue FiberScheduler::Compatibility::Close
+            # Fiber scheduler is closing.
+          ensure
+            scheduler._fleeting.delete(Fiber.current)
+          end
+          scheduler._fleeting[fiber] = nil
+          fiber.tap(&:transfer)
 
         when nil
           Fiber.schedule do

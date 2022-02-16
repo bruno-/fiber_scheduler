@@ -70,6 +70,48 @@ RSpec.describe FiberScheduler do
           end
         end
       end
+
+      context "with :fleeting arg" do
+        context "with non-blocking operations" do
+          def operations
+            FiberScheduler :fleeting do
+              order << 1
+              sleep 1
+              order << :this_line_never_runs
+            end
+            order << 2
+          end
+
+          it "never finishes" do
+            setup
+
+            expect(order).to eq (1..2).to_a
+          end
+        end
+
+        context "with no non-blocking operations" do
+          def fibonacci(n)
+            return n if [0, 1].include? n
+
+            fibonacci(n - 1) + fibonacci(n - 2)
+          end
+
+          def operations
+            FiberScheduler :fleeting do
+              order << 1
+              fibonacci(10)
+              order << 2
+            end
+            order << 3
+          end
+
+          it "finishes" do
+            setup
+
+            expect(order).to eq (1..3).to_a
+          end
+        end
+      end
     end
 
     context "with default setup" do

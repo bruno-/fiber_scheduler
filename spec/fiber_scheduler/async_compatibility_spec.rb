@@ -112,6 +112,40 @@ RSpec.describe FiberScheduler do
         end
       end
 
+      context "with a fleeting FiberScheduler" do
+        it "behaves sync" do
+          Async do |task|
+            order << 1
+
+            task.async do
+              order << 2
+              sleep 0.01
+              order << 8
+            end
+
+            order << 3
+
+            FiberScheduler :fleeting do
+              order << 4
+
+              Fiber.schedule do
+                order << 5
+                sleep 0.01
+                order << 9
+              end
+
+              order << 7
+              sleep 5
+              order << :this_line_never_runs
+            end
+
+            order << 6
+          end
+
+          expect(order).to eq (1..9).to_a
+        end
+      end
+
       context "with waiting Fiber.schedule" do
         it "waits on the fiber" do
           Async do |task|
@@ -253,7 +287,7 @@ RSpec.describe FiberScheduler do
 
                 Fiber.schedule(:fleeting) do
                   order << 7
-                  sleep
+                  sleep 5
                   order << :this_line_never_runs
                 end
 

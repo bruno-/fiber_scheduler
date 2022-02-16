@@ -32,7 +32,7 @@ class FiberScheduler
         end
 
       when :fleeting
-        # Transfer to current fiber some time - after a fleeting fiber yields.
+        # Transfer to current fiber some time after a fleeting fiber yields.
         unblock(nil, Fiber.current)
         # Alternative to #unblock: Fiber.scheduler.push(Fiber.current)
 

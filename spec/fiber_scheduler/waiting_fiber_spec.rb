@@ -17,7 +17,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(waiting: true) do
+          Fiber.schedule(:waiting) do
             order << 3
             sleep 0.01
             order << 5
@@ -54,7 +54,7 @@ RSpec.describe FiberScheduler do
           Fiber.schedule do
             order << 3
 
-            Fiber.schedule(waiting: true) do
+            Fiber.schedule(:waiting) do
               order << 4
               sleep 0.01
               order << 9
@@ -91,10 +91,10 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(waiting: true) do
+          Fiber.schedule(:waiting) do
             order << 3
 
-            Fiber.schedule(waiting: true) do
+            Fiber.schedule(:waiting) do
               order << 4
               sleep 0.01
               order << 6

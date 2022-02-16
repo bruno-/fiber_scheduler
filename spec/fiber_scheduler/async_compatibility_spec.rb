@@ -9,38 +9,38 @@ RSpec.describe FiberScheduler do
 
     context "with Async block" do
       context "without FiberScheduler options" do
-        it "behaves synchronous" do
+        it "behaves asynchronous" do
           Async do |task|
             task.async do
               order << 1
               sleep 0.001
-              order << 8
+              order << 9
             end
 
             order << 2
 
-            FiberScheduler do # default 'waiting: true' option
+            FiberScheduler do
               order << 3
               Fiber.schedule do
                 order << 4
                 sleep 0.001
-                order << 9
-              end
-
-              order << 5
-
-              Fiber.schedule do
-                order << 6
-                sleep 0.001
                 order << 10
               end
 
-              order << 7
+              order << 6
+
+              Fiber.schedule do
+                order << 7
+                sleep 0.001
+                order << 11
+              end
+
+              order << 8
               sleep 0.02
-              order << 11
+              order << 12
             end
 
-            order << 12
+            order << 5
           end
 
           expect(order).to eq (1..12).to_a
@@ -60,7 +60,7 @@ RSpec.describe FiberScheduler do
 
             order << 3
 
-            FiberScheduler(blocking: true) do
+            FiberScheduler :blocking do
               order << 4
               Fiber.schedule do
                 order << 5
@@ -78,32 +78,34 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with a non-waiting FiberScheduler" do
-        it "behaves async" do
+      context "with a waiting FiberScheduler" do
+        it "behaves sync" do
           Async do |task|
             order << 1
 
             task.async do
               order << 2
               sleep 0.01
-              order << 8
+              order << 7
             end
 
             order << 3
 
-            FiberScheduler(waiting: false) do
+            FiberScheduler :waiting do
               order << 4
+
               Fiber.schedule do
                 order << 5
                 sleep 0.01
-                order << 9
+                order << 8
               end
-              order << 7
+
+              order << 6
               sleep 0.02
-              order << 10
+              order << 9
             end
 
-            order << 6
+            order << 10
           end
 
           expect(order).to eq (1..10).to_a
@@ -116,33 +118,33 @@ RSpec.describe FiberScheduler do
             task.async do
               order << 1
               sleep 0.001
-              order << 7
+              order << 8
             end
 
             order << 2
 
-            FiberScheduler do # default 'waiting: true' option
+            FiberScheduler do
               order << 3
               Fiber.schedule do
                 order << 4
                 sleep 0.002
-                order << 8
-              end
-
-              order << 5
-
-              Fiber.schedule(waiting: true) do
-                order << 6
-                sleep 0.003
                 order << 9
               end
 
-              order << 10
-              sleep 0.001
+              order << 6
+
+              Fiber.schedule(:waiting) do
+                order << 7
+                sleep 0.003
+                order << 10
+              end
+
               order << 11
+              sleep 0.001
+              order << 12
             end
 
-            order << 12
+            order << 5
           end
 
           expect(order).to eq (1..12).to_a
@@ -155,33 +157,33 @@ RSpec.describe FiberScheduler do
             task.async do
               order << 1
               sleep 0.001
-              order << 9
+              order << 10
             end
 
             order << 2
 
-            FiberScheduler do # default 'waiting: true' option
+            FiberScheduler do
               order << 3
               Fiber.schedule do
                 order << 4
                 sleep 0.002
-                order << 10
+                order << 11
               end
 
-              order << 5
+              order << 6
 
-              Fiber.schedule(blocking: true) do
-                order << 6
-                sleep 0.003
+              Fiber.schedule(:blocking) do
                 order << 7
+                sleep 0.003
+                order << 8
               end
 
-              order << 8
+              order << 9
               sleep 0.001
-              order << 11
+              order << 12
             end
 
-            order << 12
+            order << 5
           end
 
           expect(order).to eq (1..12).to_a
@@ -199,7 +201,7 @@ RSpec.describe FiberScheduler do
 
             order << 2
 
-            FiberScheduler(blocking: true) do
+            FiberScheduler :blocking do
               order << 3
               Fiber.schedule do
                 order << 4
@@ -209,7 +211,7 @@ RSpec.describe FiberScheduler do
 
               order << 5
 
-              Fiber.schedule(blocking: true) do
+              Fiber.schedule(:blocking) do
                 order << 6
                 sleep 0.003
                 order << 7
@@ -234,12 +236,12 @@ RSpec.describe FiberScheduler do
               task.async do
                 order << 1
                 sleep 0.001
-                order << 8
+                order << 9
               end
 
               order << 2
 
-              FiberScheduler do # default 'waiting: true' option
+              FiberScheduler do
                 order << 3
                 Fiber.schedule do
                   order << 4
@@ -247,20 +249,20 @@ RSpec.describe FiberScheduler do
                   order << 11
                 end
 
-                order << 5
+                order << 6
 
-                Fiber.schedule(fleeting: true) do
-                  order << 6
+                Fiber.schedule(:fleeting) do
+                  order << 7
                   sleep
                   order << :this_line_never_runs
                 end
 
-                order << 7
+                order << 8
                 sleep 0.001
-                order << 9
+                order << 10
               end
 
-              order << 10
+              order << 5
             end
 
             expect(order).to eq (1..11).to_a
@@ -273,12 +275,12 @@ RSpec.describe FiberScheduler do
               task.async do
                 order << 1
                 sleep 0.001
-                order << 8
+                order << 9
               end
 
               order << 2
 
-              FiberScheduler do # default 'waiting: true' option
+              FiberScheduler do
                 order << 3
                 Fiber.schedule do
                   order << 4
@@ -286,18 +288,18 @@ RSpec.describe FiberScheduler do
                   order << 11
                 end
 
-                order << 5
+                order << 6
 
-                Fiber.schedule(fleeting: true) do
-                  order << 6
+                Fiber.schedule(:fleeting) do
+                  order << 7
                 end
 
-                order << 7
+                order << 8
                 sleep 0.001
-                order << 9
+                order << 10
               end
 
-              order << 10
+              order << 5
             end
 
             expect(order).to eq (1..11).to_a
@@ -308,40 +310,40 @@ RSpec.describe FiberScheduler do
 
     context "with Async::Scheduler" do
       context "without FiberScheduler options" do
-        it "behaves synchronous" do
+        it "behaves asynchronous" do
           scheduler = Async::Scheduler.new
           Fiber.set_scheduler scheduler
 
           Fiber.schedule do
             order << 1
             sleep 0.001
-            order << 8
+            order << 9
           end
 
           order << 2
 
-          FiberScheduler do # default 'waiting: true' option
+          FiberScheduler do
             order << 3
             Fiber.schedule do
               order << 4
               sleep 0.001
-              order << 9
-            end
-
-            order << 5
-
-            Fiber.schedule do
-              order << 6
-              sleep 0.001
               order << 10
             end
 
-            order << 7
+            order << 6
+
+            Fiber.schedule do
+              order << 7
+              sleep 0.001
+              order << 11
+            end
+
+            order << 8
             sleep 0.02
-            order << 11
+            order << 12
           end
 
-          order << 12
+          order << 5
 
           scheduler.run
 
@@ -366,7 +368,7 @@ RSpec.describe FiberScheduler do
 
           order << 3
 
-          FiberScheduler(blocking: true) do
+          FiberScheduler :blocking do
             order << 4
             Fiber.schedule do
               order << 5
@@ -385,8 +387,8 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with a non-waiting FiberScheduler" do
-        it "behaves async" do
+      context "with a waiting FiberScheduler" do
+        it "behaves sync" do
           scheduler = Async::Scheduler.new
           Fiber.set_scheduler scheduler
 
@@ -395,24 +397,25 @@ RSpec.describe FiberScheduler do
           Fiber.schedule do
             order << 2
             sleep 0.01
-            order << 8
+            order << 7
           end
 
           order << 3
 
-          FiberScheduler(waiting: false) do
+          FiberScheduler :waiting do
             order << 4
             Fiber.schedule do
               order << 5
               sleep 0.01
-              order << 9
+              order << 8
             end
-            order << 7
+
+            order << 6
             sleep 0.02
-            order << 10
+            order << 9
           end
 
-          order << 6
+          order << 10
 
           scheduler.run
 

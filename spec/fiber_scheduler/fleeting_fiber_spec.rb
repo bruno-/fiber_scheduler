@@ -17,7 +17,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(fleeting: true) do
+          Fiber.schedule(:fleeting) do
             order << 3
             sleep
             order << :this_line_never_runs
@@ -46,7 +46,7 @@ RSpec.describe FiberScheduler do
           Fiber.schedule do
             order << 3
 
-            Fiber.schedule(fleeting: true) do
+            Fiber.schedule(:fleeting) do
               order << 4
               sleep
               order << :this_line_never_runs
@@ -75,10 +75,10 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(waiting: true) do
+          Fiber.schedule(:waiting) do
             order << 3
 
-            Fiber.schedule(fleeting: true) do
+            Fiber.schedule(:fleeting) do
               order << 4
               sleep
               order << :this_line_never_runs
@@ -107,7 +107,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(fleeting: true) do
+          Fiber.schedule(:fleeting) do
             order << 3
             sleep 0.001
             order << 5

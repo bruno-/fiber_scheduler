@@ -10,7 +10,7 @@ rescue LoadError
 end
 
 module Kernel
-  def FiberScheduler(blocking: false, waiting: true, &block)
+  def FiberScheduler(type = nil, &block)
     if Fiber.scheduler.nil?
       scheduler = FiberScheduler.new
       Fiber.set_scheduler(scheduler)
@@ -28,21 +28,22 @@ module Kernel
       if scheduler.is_a?(FiberScheduler)
         # The default waiting is 'true' as that is the most intuitive behavior
         # for a nested FiberScheduler call.
-        Fiber.schedule(blocking: blocking, waiting: waiting, &block)
+        Fiber.schedule(type, &block)
 
         # Unknown fiber scheduler class; can't just pass options to
         # Fiber.schedule, handle each option separately.
       else
         scheduler.singleton_class.prepend(FiberScheduler::Compatibility)
 
-        if blocking
+        case type
+        when :blocking
           fiber = Fiber.new(blocking: true) do
             FiberScheduler::Compatibility.set_internal!
             yield
           end
           fiber.tap(&:resume)
 
-        elsif waiting
+        when :waiting
           parent = Fiber.current
           finished = false # prevents races
           blocking = false # prevents #unblock-ing a fiber that never blocked
@@ -66,12 +67,16 @@ module Kernel
             blocking = true
             scheduler.block(nil, nil)
           end
+        when :fleeting
 
-        else
+        when nil
           Fiber.schedule do
             FiberScheduler::Compatibility.set_internal!
             yield
           end
+
+        else
+          raise "Unknown type"
         end
       end
     end
@@ -170,13 +175,13 @@ class FiberScheduler
     @timeouts.timeout(duration, exception, message, &block)
   end
 
-  def fiber(blocking: false, waiting: false, fleeting: false, &block)
+  def fiber(type = nil, &block)
     current = Fiber.current
 
-    if blocking
-      # All fibers wait on a blocking fiber, so 'waiting' option is ignored.
+    case type
+    when :blocking
       Fiber.new(blocking: true, &block).tap(&:resume)
-    elsif waiting
+    when :waiting
       finished = false # prevents races
       fiber = Fiber.new(blocking: false) do
         @count += 1
@@ -201,14 +206,14 @@ class FiberScheduler
       end
 
       fiber
-    elsif fleeting
+    when :fleeting
       if current != @fiber
         # nested Fiber.schedule
         @nested << current
       end
 
       Fiber.new(blocking: false, &block).tap(&:transfer)
-    else
+    when nil
       if current != @fiber
         # nested Fiber.schedule
         @nested << current
@@ -221,6 +226,9 @@ class FiberScheduler
         @count -= 1
       end
       fiber.tap(&:transfer)
+
+    else
+      raise "Unknown type"
     end
   end
 end

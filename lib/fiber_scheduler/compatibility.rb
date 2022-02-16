@@ -4,13 +4,15 @@ class FiberScheduler
       return super unless Compatibility.internal?
 
       # This is `Fiber.schedule` call inside `FiberScheduler { ... }` block.
-      if opts[:blocking]
+      type = args.first
+      case type
+      when :blocking
         Fiber.new(blocking: true) {
           Compatibility.set_internal!
           yield
         }.tap(&:resume)
 
-      elsif opts[:waiting]
+      when :waiting
         parent = Fiber.current
         finished = false # prevents races
         blocking = false # prevents #unblock-ing a fiber that never blocked
@@ -29,7 +31,7 @@ class FiberScheduler
           block(nil, nil)
         end
 
-      elsif opts[:fleeting]
+      when :fleeting
         # Transfer to current fiber some time - after a fleeting fiber yields.
         unblock(nil, Fiber.current)
         # Alternative to #unblock: Fiber.scheduler.push(Fiber.current)
@@ -39,12 +41,15 @@ class FiberScheduler
           yield
         }.transfer
 
-      else
+      when nil
         # Don't pass *args and **opts to an unknown fiber scheduler class.
         super() do
           Compatibility.set_internal!
           yield
         end
+
+      else
+        raise "Unknown type"
       end
     end
 

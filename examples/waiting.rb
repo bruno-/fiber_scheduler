@@ -2,7 +2,7 @@ require_relative "../lib/fiber_scheduler"
 
 FiberScheduler do
   Fiber.schedule do
-    Fiber.schedule(waiting: true) do
+    Fiber.schedule(:waiting) do
       sleep 2
     end
 

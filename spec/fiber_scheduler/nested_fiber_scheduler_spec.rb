@@ -8,7 +8,7 @@ RSpec.describe FiberScheduler do
       let(:order) { [] }
 
       context "with default arguments" do
-        context "with only blocking operations" do
+        context "with no non-blocking operations" do
           def operations
             FiberScheduler do
               order << 1
@@ -31,20 +31,20 @@ RSpec.describe FiberScheduler do
             FiberScheduler do
               order << 1
               sleep 0
-              order << 2
+              order << 3
 
               FiberScheduler do
-                order << 3
-                sleep 0
                 order << 4
+                sleep 0
+                order << 6
               end
 
               order << 5
             end
-            order << 6
+            order << 2
           end
 
-          it "behaves synchronous" do
+          it "behaves asynchronous" do
             setup
 
             expect(order).to eq (1..6).to_a
@@ -52,18 +52,18 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with 'waiting: false' option" do
-        context "with async operations" do
+      context "with :waiting arg" do
+        context "with non-blocking operations" do
           def operations
-            FiberScheduler(waiting: false) do
+            FiberScheduler :waiting do
               order << 1
               sleep 0
-              order << 3
+              order << 2
             end
-            order << 2
+            order << 3
           end
 
-          it "behaves async" do
+          it "behaves sync" do
             setup
 
             expect(order).to eq (1..3).to_a

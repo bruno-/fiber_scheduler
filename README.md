@@ -198,7 +198,7 @@ end
 #### Waiting Fiber.schedule example
 
 Sometimes it's conventient for the parent to wait on the child fiber to
-complete. Use `Fiber.schedule(waiting: true)` to achieve that.
+complete. Use `Fiber.schedule(:waiting)` to achieve that.
 
 In the below example fiber labeled `parent` will wait for the `child` fiber to
 complete. Note that only the `parent` fiber waits, other fibers run as usual.
@@ -209,7 +209,7 @@ require "fiber_scheduler"
 
 FiberScheduler do
   Fiber.schedule do # parent
-    Fiber.schedule(waiting: true) do # child
+    Fiber.schedule(:waiting) do # child
       sleep 2
     end
     # The fiber stops here until the waiting child fiber completes.
@@ -235,7 +235,7 @@ require "fiber_scheduler"
 
 FiberScheduler do
   Fiber.schedule do
-    Fiber.schedule(blocking: true) do
+    Fiber.schedule(:blocking) do
       sleep 2
     end
   end

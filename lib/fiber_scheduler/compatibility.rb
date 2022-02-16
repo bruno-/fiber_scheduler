@@ -20,7 +20,7 @@ class FiberScheduler
         blocking = false # prevents #unblock-ing a fiber that never blocked
 
         # Don't pass *args and **opts to an unknown fiber scheduler class.
-        super() do
+        fiber = super() do
           Compatibility.set_internal!
           yield
         ensure
@@ -32,6 +32,8 @@ class FiberScheduler
           blocking = true
           block(nil, nil)
         end
+
+        fiber
 
       when :fleeting
         # Transfer to current fiber some time after a fleeting fiber yields.

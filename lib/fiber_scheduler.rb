@@ -46,7 +46,7 @@ module Kernel
           finished = false # prevents races
           blocking = false # prevents #unblock-ing a fiber that never blocked
 
-          Fiber.schedule do
+          fiber = Fiber.schedule do
             FiberScheduler::Compatibility.set_internal!
             yield
           ensure
@@ -65,6 +65,9 @@ module Kernel
             blocking = true
             scheduler.block(nil, nil)
           end
+
+          fiber
+
         when :fleeting
           scheduler.unblock(nil, Fiber.current)
 
@@ -191,6 +194,7 @@ class FiberScheduler
     case type
     when :blocking
       Fiber.new(blocking: true, &block).tap(&:resume)
+
     when :waiting
       finished = false # prevents races
       fiber = Fiber.new(blocking: false) do
@@ -216,6 +220,7 @@ class FiberScheduler
       end
 
       fiber
+
     when :fleeting
       if current != @fiber
         # nested Fiber.schedule
@@ -223,6 +228,7 @@ class FiberScheduler
       end
 
       Fiber.new(blocking: false, &block).tap(&:transfer)
+
     when nil
       if current != @fiber
         # nested Fiber.schedule

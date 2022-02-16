@@ -170,7 +170,7 @@ class FiberScheduler
     @timeouts.timeout(duration, exception, message, &block)
   end
 
-  def fiber(blocking: false, waiting: false, &block)
+  def fiber(blocking: false, waiting: false, fleeting: false, &block)
     current = Fiber.current
 
     if blocking
@@ -201,6 +201,13 @@ class FiberScheduler
       end
 
       fiber
+    elsif fleeting
+      if current != @fiber
+        # nested Fiber.schedule
+        @nested << current
+      end
+
+      Fiber.new(blocking: false, &block).tap(&:transfer)
     else
       if current != @fiber
         # nested Fiber.schedule

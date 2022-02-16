@@ -29,6 +29,16 @@ class FiberScheduler
           block(nil, nil)
         end
 
+      elsif opts[:fleeting]
+        # Transfer to current fiber some time - after a fleeting fiber yields.
+        unblock(nil, Fiber.current)
+        # Alternative to #unblock: Fiber.scheduler.push(Fiber.current)
+
+        Fiber.new(blocking: false) {
+          Compatibility.set_internal!
+          yield
+        }.transfer
+
       else
         # Don't pass *args and **opts to an unknown fiber scheduler class.
         super() do

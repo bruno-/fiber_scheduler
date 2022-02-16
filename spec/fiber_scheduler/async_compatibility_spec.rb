@@ -226,6 +226,84 @@ RSpec.describe FiberScheduler do
           expect(order).to eq (1..12).to_a
         end
       end
+
+      context "with fleeting Fiber.schedule" do
+        context "when fleeting fiber contains a blocking operation" do
+          it "never finishes" do
+            Async do |task|
+              task.async do
+                order << 1
+                sleep 0.001
+                order << 8
+              end
+
+              order << 2
+
+              FiberScheduler do # default 'waiting: true' option
+                order << 3
+                Fiber.schedule do
+                  order << 4
+                  sleep 0.002
+                  order << 11
+                end
+
+                order << 5
+
+                Fiber.schedule(fleeting: true) do
+                  order << 6
+                  sleep
+                  order << :this_line_never_runs
+                end
+
+                order << 7
+                sleep 0.001
+                order << 9
+              end
+
+              order << 10
+            end
+
+            expect(order).to eq (1..11).to_a
+          end
+        end
+
+        context "when fleeting fiber contains no blocking operations" do
+          it "never finishes" do
+            Async do |task|
+              task.async do
+                order << 1
+                sleep 0.001
+                order << 8
+              end
+
+              order << 2
+
+              FiberScheduler do # default 'waiting: true' option
+                order << 3
+                Fiber.schedule do
+                  order << 4
+                  sleep 0.002
+                  order << 11
+                end
+
+                order << 5
+
+                Fiber.schedule(fleeting: true) do
+                  order << 6
+                end
+
+                order << 7
+                sleep 0.001
+                order << 9
+              end
+
+              order << 10
+            end
+
+            expect(order).to eq (1..11).to_a
+          end
+        end
+      end
     end
 
     context "with Async::Scheduler" do

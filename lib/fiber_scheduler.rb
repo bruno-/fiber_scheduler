@@ -12,12 +12,10 @@ end
 module Kernel
   def FiberScheduler(type = nil, &block)
     if Fiber.scheduler.nil?
-      scheduler = FiberScheduler.new
-      Fiber.set_scheduler(scheduler)
+      Fiber.set_scheduler(FiberScheduler.new)
 
       begin
         yield
-        scheduler.close
       ensure
         Fiber.set_scheduler(nil)
       end

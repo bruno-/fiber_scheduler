@@ -228,7 +228,7 @@ end
 Blocking fibers "block" all the other fibers from running until they're
 finished.
 
-This example takes 4 seconds to finish
+This example takes 4 seconds to finish:
 
 ```ruby
 require "fiber_scheduler"
@@ -238,6 +238,28 @@ FiberScheduler do
     Fiber.schedule(:blocking) do
       sleep 2
     end
+  end
+
+  Fiber.schedule do
+    sleep 2
+  end
+end
+```
+
+#### Fleeting Fiber.schedule example
+
+Fleeting fibers end (and may not complete) when all the other "standard" fibers
+are finished. This is useful if you have a never-ending task that performs some
+cleanup work that should end when the rest of the program finishes.
+
+This example takes 2 seconds to finish:
+
+```ruby
+require "fiber_scheduler"
+
+FiberScheduler do
+  Fiber.schedule(:fleeting) do
+    sleep 1000
   end
 
   Fiber.schedule do

@@ -71,10 +71,10 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with :fleeting arg" do
+      context "with :volatile arg" do
         context "with non-blocking operations" do
           def operations
-            FiberScheduler :fleeting do
+            FiberScheduler :volatile do
               order << 1
               sleep 1
               order << :this_line_never_runs
@@ -97,7 +97,7 @@ RSpec.describe FiberScheduler do
           end
 
           def operations
-            FiberScheduler :fleeting do
+            FiberScheduler :volatile do
               order << 1
               fibonacci(10)
               order << 2

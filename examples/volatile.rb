@@ -1,7 +1,7 @@
 require_relative "../lib/fiber_scheduler"
 
 FiberScheduler do
-  Fiber.schedule(:fleeting) do
+  Fiber.schedule(:volatile) do
     sleep 1000
   end
 

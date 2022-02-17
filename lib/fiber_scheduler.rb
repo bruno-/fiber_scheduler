@@ -68,7 +68,7 @@ module Kernel
 
           fiber
 
-        when :fleeting
+        when :volatile
           scheduler.unblock(nil, Fiber.current)
 
           fiber = Fiber.new(blocking: false) do
@@ -77,9 +77,9 @@ module Kernel
           rescue FiberScheduler::Compatibility::Close
             # Fiber scheduler is closing.
           ensure
-            scheduler._fleeting.delete(Fiber.current)
+            scheduler._volatile.delete(Fiber.current)
           end
-          scheduler._fleeting[fiber] = nil
+          scheduler._volatile[fiber] = nil
           fiber.tap(&:transfer)
 
         when nil
@@ -221,7 +221,7 @@ class FiberScheduler
 
       fiber
 
-    when :fleeting
+    when :volatile
       if current != @fiber
         # nested Fiber.schedule
         @nested << current

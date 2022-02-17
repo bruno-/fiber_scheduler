@@ -1,10 +1,10 @@
 require "fiber_scheduler_spec/context"
 
 RSpec.describe FiberScheduler do
-  describe "fleeting fiber" do
+  describe "volatile fiber" do
     include_context FiberSchedulerSpec::Context
 
-    shared_examples :fleeting_fiber_schedule do
+    shared_examples :volatile_fiber_schedule do
       let(:order) { [] }
 
       context "when scheduled in a top-level fiber" do
@@ -17,7 +17,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(:fleeting) do
+          Fiber.schedule(:volatile) do
             order << 3
             sleep
             order << :this_line_never_runs
@@ -46,7 +46,7 @@ RSpec.describe FiberScheduler do
           Fiber.schedule do
             order << 3
 
-            Fiber.schedule(:fleeting) do
+            Fiber.schedule(:volatile) do
               order << 4
               sleep
               order << :this_line_never_runs
@@ -78,7 +78,7 @@ RSpec.describe FiberScheduler do
           Fiber.schedule(:waiting) do
             order << 3
 
-            Fiber.schedule(:fleeting) do
+            Fiber.schedule(:volatile) do
               order << 4
               sleep
               order << :this_line_never_runs
@@ -97,7 +97,7 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "when a fleeting fiber ends fast" do
+      context "when a volatile fiber ends fast" do
         def operations
           Fiber.schedule do
             order << 1
@@ -107,7 +107,7 @@ RSpec.describe FiberScheduler do
 
           order << 2
 
-          Fiber.schedule(:fleeting) do
+          Fiber.schedule(:volatile) do
             order << 3
             sleep 0.001
             order << 5
@@ -125,7 +125,7 @@ RSpec.describe FiberScheduler do
     end
 
     context "with default setup" do
-      include_examples :fleeting_fiber_schedule
+      include_examples :volatile_fiber_schedule
     end
 
     context "with block setup" do
@@ -135,7 +135,7 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      include_examples :fleeting_fiber_schedule
+      include_examples :volatile_fiber_schedule
     end
   end
 end

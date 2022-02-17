@@ -112,7 +112,7 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with a fleeting FiberScheduler" do
+      context "with a volatile FiberScheduler" do
         it "behaves sync" do
           Async do |task|
             order << 1
@@ -125,7 +125,7 @@ RSpec.describe FiberScheduler do
 
             order << 3
 
-            FiberScheduler :fleeting do
+            FiberScheduler :volatile do
               order << 4
 
               Fiber.schedule do
@@ -263,8 +263,8 @@ RSpec.describe FiberScheduler do
         end
       end
 
-      context "with fleeting Fiber.schedule" do
-        context "when fleeting fiber contains a blocking operation" do
+      context "with volatile Fiber.schedule" do
+        context "when volatile fiber contains a blocking operation" do
           it "never finishes" do
             Async do |task|
               task.async do
@@ -285,7 +285,7 @@ RSpec.describe FiberScheduler do
 
                 order << 6
 
-                Fiber.schedule(:fleeting) do
+                Fiber.schedule(:volatile) do
                   order << 7
                   sleep 5
                   order << :this_line_never_runs
@@ -303,7 +303,7 @@ RSpec.describe FiberScheduler do
           end
         end
 
-        context "when fleeting fiber contains no blocking operations" do
+        context "when volatile fiber contains no blocking operations" do
           it "never finishes" do
             Async do |task|
               task.async do
@@ -324,7 +324,7 @@ RSpec.describe FiberScheduler do
 
                 order << 6
 
-                Fiber.schedule(:fleeting) do
+                Fiber.schedule(:volatile) do
                   order << 7
                 end
 

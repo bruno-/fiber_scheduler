@@ -35,8 +35,8 @@ class FiberScheduler
 
         fiber
 
-      when :fleeting
-        # Transfer to current fiber some time after a fleeting fiber yields.
+      when :volatile
+        # Transfer to current fiber some time after a volatile fiber yields.
         unblock(nil, Fiber.current)
         # Alternative to #unblock: Fiber.scheduler.push(Fiber.current)
 
@@ -46,9 +46,9 @@ class FiberScheduler
         rescue Close
           # Fiber scheduler is closing.
         ensure
-          _fleeting.delete(Fiber.current)
+          _volatile.delete(Fiber.current)
         end
-        _fleeting[fiber] = nil
+        _volatile[fiber] = nil
         fiber.tap(&:transfer)
 
       when nil
@@ -63,17 +63,17 @@ class FiberScheduler
       end
     end
 
-    # #close and #_fleeting handle a complexity in Async::Scheduler#close, more
+    # #close and #_volatile handle a complexity in Async::Scheduler#close, more
     # specifically this line:
     # https://github.com/socketry/async/blob/456df488d801572821eaf5ec2fda10e3b9744a5f/lib/async/scheduler.rb#L55
     def close
       super
     rescue
-      if _fleeting.empty?
+      if _volatile.empty?
         Kernel.raise
       else
-        # #dup is used because #_fleeting is modified during iteration.
-        _fleeting.dup.each do |fiber, _|
+        # #dup is used because #_volatile is modified during iteration.
+        _volatile.dup.each do |fiber, _|
           fiber.raise(Close)
         end
 
@@ -81,8 +81,8 @@ class FiberScheduler
       end
     end
 
-    def _fleeting
-      @_fleeting ||= {}
+    def _volatile
+      @_volatile ||= {}
     end
 
     def self.set_internal!

@@ -2,17 +2,18 @@
 
 Ruby 3 has
 [fiber scheduler hooks](https://docs.ruby-lang.org/en/master/Fiber/SchedulerInterface.html)
-that enable asynchronous programming. To make this work a "fiber scheduler
-class" is needed, **but Ruby does not provide a default one**.
+that enable asynchronous programming. In order to make this work you need a
+"fiber scheduler class", **but Ruby does not provide a default one**.
 
 This gem aims to fill that void by providing a fiber scheduler class that makes
-a great default. It's easy to use, performant, and has a sensible feature set.
+a great default. It's easy to use, performant, and can be used with
+**just built-in Ruby methods**.
 
 `fiber_scheduler`'s killer feature 💣 is full compatibility with any other
 "fiber scheduler implementation", including the
 [async gem](https://github.com/socketry/async). Write code using
 `fiber_scheduler` and it works seamlessly with `async`, `bsync` or whatever
-hot `_sync` gem comes in the future.
+other `_sync` gem comes in the future.
 
 ### Installation
 
@@ -24,14 +25,15 @@ Requires Ruby 3.1.
 
 ### Highlights
 
-- Asynchronous (colorless) programming in Ruby.
+- Enables asynchronous (colorless) programming in Ruby.
 - Killer feature: full compatibility with any other "fiber scheduler class",
   including the [async gem](https://github.com/socketry/async).
-- Not a framework: no DSL or new APIs. Just built-in Ruby methods:
+- Not a framework: no DSL or new APIs. Can be used with just built-in Ruby
+  methods:
   [Fiber.set_scheduler](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-set_scheduler)
   and
   [Fiber.schedule](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-schedule).
-- ~400 LOC of pure Ruby, no C extensions.
+- ~500 LOC of pure Ruby, no C extensions.
 - No dependencies.
 
 ### Setup
@@ -61,21 +63,22 @@ Fiber.set_scheduler(FiberScheduler.new)
 # Your code here, e.g. Fiber.schedule { ... }
 ```
 
+`Fiber.scheduler` is set until the end of the current thread, unless manually
+unset with `Fiber.set_scheduler(nil)`.
+
 Pros:
 
-- Uses only built-in Ruby methods (`Fiber.set_scheduler` and `Fiber.schedule`).
+- Uses only built-in Ruby methods `Fiber.set_scheduler` and `Fiber.schedule`.
 
 Cons:
 
-- `Fiber.scheduler` is set until the end of the current thread (unless manually
-  unset).
 - No compatibility with other fiber schedulers.
 
 ### Examples
 
 #### Basic example
 
-- Basic example running two HTTP requests in parallel:
+Basic example running two HTTP requests in parallel:
 
 ```ruby
 require "fiber_scheduler"
@@ -94,7 +97,7 @@ end
 
 #### Advanced example
 
-This example runs various operations in parallel. The program total running
+This example runs various operations in parallel. The example total running
 time is slightly more than 2 seconds, which indicates all the operations ran in
 parallel.
 
@@ -202,7 +205,8 @@ complete. Use `Fiber.schedule(:waiting)` to achieve that.
 
 In the below example fiber labeled `parent` will wait for the `child` fiber to
 complete. Note that only the `parent` fiber waits, other fibers run as usual.
-This example takes 4 seconds to finish
+
+This example takes 4 seconds to finish.
 
 ```ruby
 require "fiber_scheduler"
@@ -228,7 +232,7 @@ end
 Blocking fibers "block" all the other fibers from running until they're
 finished.
 
-This example takes 4 seconds to finish:
+This example takes 4 seconds to finish.
 
 ```ruby
 require "fiber_scheduler"
@@ -248,18 +252,26 @@ end
 
 #### Fleeting Fiber.schedule example
 
-Fleeting fibers end (and may not complete) when all the other "standard" fibers
-are finished. This is useful if you have a never-ending task that performs some
-cleanup work that should end when the rest of the program finishes.
+Fleeting fibers end when all the other "regular" fibers are finished.
+Fleeting fibers may not run or complete all their work.
 
-This example takes 2 seconds to finish:
+This is useful if you have a neverending task that performs some
+cleanup work that should finish when the rest of the program finishes.
+
+This example takes 2 seconds to finish.
 
 ```ruby
 require "fiber_scheduler"
 
 FiberScheduler do
   Fiber.schedule(:fleeting) do
-    sleep 1000
+    # This fiber will live for only 2 seconds.
+
+    loop do
+      cleanup_work # this method will run only once
+
+      sleep 10
+    end
   end
 
   Fiber.schedule do
@@ -275,7 +287,7 @@ end
 `async` is an awesome asynchronous programming library, if not a framework.
 If `async` is like Rails, then `fiber_scheduler` is plain Ruby.
 
-`fiber_scheduler` works nicely with `async`:
+`fiber_scheduler` is fully compatible with `async`:
 
 ```ruby
 Async do |task|
@@ -293,7 +305,7 @@ Async do |task|
 end
 ```
 
-Currently the opposite doesn't work:
+Note that currently the opposite doesn't work:
 
 ```ruby
 FiberScheduler do

@@ -1,10 +1,3 @@
-Naming:
-
-opposite of:
-✓ permanent
-- durable
-- stable
-
 # Fiber scheduler
 
 Ruby 3 has
@@ -259,11 +252,11 @@ end
 
 #### Volatile Fiber.schedule example
 
-Volatile fibers end when all the other "regular" fibers are finished.
-Volatile fibers may not run or complete all their work.
+Volatile fibers end when all the "durable" fibers finish.
+Volatile fibers (by design) may not complete all their work.
 
 This is useful if you have a neverending task that performs some
-cleanup work that should finish when the rest of the program finishes.
+cleanup work that should finish when the rest of the program completes.
 
 This example takes 2 seconds to finish.
 

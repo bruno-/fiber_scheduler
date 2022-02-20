@@ -1,16 +1,16 @@
-# Fiber scheduler
+# Fiber Scheduler
 
 Ruby 3 has
-[fiber scheduler hooks](https://docs.ruby-lang.org/en/master/Fiber/SchedulerInterface.html)
+[Fiber Scheduler hooks](https://docs.ruby-lang.org/en/3.1/Fiber/SchedulerInterface.html)
 that enable asynchronous programming. In order to make this work you need a
-"fiber scheduler class", **but Ruby does not provide a default one**.
+Fiber Scheduler implementation, **but Ruby does not provide a default one**.
 
-This gem aims to fill that void by providing a fiber scheduler class that makes
+This gem aims to fill that void by providing a Fiber Scheduler class that makes
 a great default. It's easy to use, performant, and can be used with
 **just built-in Ruby methods**.
 
-`fiber_scheduler`'s killer feature 💣 is full compatibility with any other
-"fiber scheduler implementation", including the
+`fiber_scheduler`'s killer feature 💣 is **full compatibility with any other
+Fiber Scheduler implementation**, including the
 [async gem](https://github.com/socketry/async). Write code using
 `fiber_scheduler` and it works seamlessly with `async`, `bsync` or whatever
 other `_sync` gem comes in the future.
@@ -26,13 +26,13 @@ Requires Ruby 3.1.
 ### Highlights
 
 - Enables asynchronous (colorless) programming in Ruby.
-- Killer feature: full compatibility with any other "fiber scheduler class",
-  including the [async gem](https://github.com/socketry/async).
+- Killer feature: full compatibility with any other Fiber Scheduler
+  implementation, including the [async gem](https://github.com/socketry/async).
 - Not a framework: no DSL or new APIs. Can be used with just built-in Ruby
   methods:
-  [Fiber.set_scheduler](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-set_scheduler)
+  [Fiber.set_scheduler](https://docs.ruby-lang.org/en/3.1/Fiber.html#method-c-set_scheduler)
   and
-  [Fiber.schedule](https://docs.ruby-lang.org/en/master/Fiber.html#method-c-schedule).
+  [Fiber.schedule](https://docs.ruby-lang.org/en/3.1/Fiber.html#method-c-schedule).
 - ~500 LOC of pure Ruby, no C extensions.
 - No dependencies.
 
@@ -52,7 +52,7 @@ end
 Recommended because:
 
 - This approach has
-  [full compatibility with any other fiber scheduler](https://github.com/bruno-/fiber_scheduler#compatibility-with-other-fiber-schedulers).
+  [full compatibility with any other Fiber Scheduler](https://github.com/bruno-/fiber_scheduler#compatibility-with-other-fiber-schedulers).
 - `Fiber.scheduler` is automatically un-set outside the block.
 
 **Set Fiber.scheduler directly**
@@ -78,7 +78,7 @@ Cons:
 
 #### Basic example
 
-Basic example running two HTTP requests in parallel:
+This example runs two HTTP requests in parallel:
 
 ```ruby
 require "fiber_scheduler"
@@ -319,9 +319,9 @@ FiberScheduler do
 end
 ```
 
-#### Other fiber scheduler implementations
+#### Other Fiber Scheduler implementations
 
-`fiber_scheduler` gem works with any other fiber scheduler class (current and
+`fiber_scheduler` gem works with any other Fiber Scheduler class (current and
 future ones). Example:
 
 ```ruby
@@ -351,7 +351,7 @@ performance improvement.
 
 Samuel Williams for:
 
-- Implementing Ruby's fiber scheduler feature.
+- Implementing Ruby's Fiber Scheduler hooks.
 - The [default selector](lib/fiber_scheduler/selector.rb) used in this gem.
 
 ### License

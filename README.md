@@ -15,6 +15,9 @@ Fiber Scheduler implementation**, including the
 `fiber_scheduler` and it works seamlessly with `async`, `bsync` or whatever
 other `_sync` gem comes in the future.
 
+Learn more about the Ruby's
+[Fiber Scheduler feature](https://brunosutic.com/blog/ruby-fiber-scheduler).
+
 ### Installation
 
 ```

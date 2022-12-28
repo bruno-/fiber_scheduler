@@ -88,9 +88,7 @@ class FiberScheduler
       waiter&.invalidate
     end
 
-    def io_read(fiber, io, buffer, length)
-      offset = 0
-
+    def io_read(fiber, io, buffer, length, offset = 0)
       loop do
         maximum_size = buffer.size - offset
 
@@ -126,9 +124,7 @@ class FiberScheduler
       offset
     end
 
-    def io_write(fiber, io, buffer, length)
-      offset = 0
-
+    def io_write(fiber, io, buffer, length, offset = 0)
       loop do
         maximum_size = buffer.size - offset
 

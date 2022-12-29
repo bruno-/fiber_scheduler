@@ -172,12 +172,12 @@ class FiberScheduler
     end
   end
 
-  def io_read(io, buffer, length)
-    @selector.io_read(Fiber.current, io, buffer, length)
+  def io_read(io, buffer, length, offset = 0)
+    @selector.io_read(Fiber.current, io, buffer, length, offset)
   end
 
-  def io_write(io, buffer, length)
-    @selector.io_write(Fiber.current, io, buffer, length)
+  def io_write(io, buffer, length, offset = 0)
+    @selector.io_write(Fiber.current, io, buffer, length, offset)
   end
 
   def process_wait(pid, flags)
